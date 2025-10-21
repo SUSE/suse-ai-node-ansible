@@ -1,0 +1,51 @@
+---
+
+# Packages
+- name: Check that each package in {{ suse_packages }} is installed
+  become: true
+  command: rpm -q {{ item }}
+  loop: "{{ suse_packages }}"
+  register: check_installed
+  when:
+    - suse_packages | length > 0
+
+- name: Print if any package is not installed
+  debug:
+    msg: "One or more packages were not installed successfully."
+  when: check_installed.results | selectattr('rc', 'ne', 0) | list | length > 0
+
+# Nvidia checks
+- name: Check for GPU using lspci
+  become: true
+  command: lspci
+  register: lspci_out
+
+- name: Determine if GPU is present
+  set_fact:
+    has_gpu: "{{ lspci_out.stdout is search('VGA compatible controller.*NVIDIA|3D controller.*NVIDIA', ignorecase=True) }}"
+
+- name: Make sure nvidia-smi is working
+  become: true
+  ansible.builtin.shell: nvidia-smi
+  register: nvidia_smi_result
+  changed_when: false
+  failed_when: nvidia_smi_result.rc != 0
+  when: has_gpu | default(false)
+
+- name: Validate via nvidia-ctk
+  become: true
+  shell: |
+    nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
+  register: nvidia_ctk_result
+  ignore_errors: true # validation in next task
+  when: has_gpu | default(false)
+
+- name: Assert the nvidia-ctk result
+  assert:
+    that:
+      - nvidia_ctk_result.stdout is defined
+      -  "'error' not in nvidia_ctk_result.stdout | lower"
+    success_msg: "nvidia-ctk validation passed."
+    fail_msg: "nvidia-ctk validation failed."
+  when: has_gpu | default(false)
+

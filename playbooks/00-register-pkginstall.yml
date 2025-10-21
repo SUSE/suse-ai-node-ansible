@@ -1,0 +1,45 @@
+- name: Pre-Check all hosts, Register and Install Packages
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Debug facts
+      ansible.builtin.debug:
+        msg:
+          - "ansible_os_family = {{ ansible_os_family }}"
+          - "ansible_distribution = {{ ansible_distribution }}"
+
+    # Pre-Check
+    - name: Fail if not SUSE family
+      ansible.builtin.assert:
+        that:
+          - ansible_os_family == 'Suse' or ansible_distribution == 'SL-Micro'
+        fail_msg: "Supported only on SUSE family operating systems."
+        success_msg: "This is a SUSE system."
+
+    # Register with SCC
+    - name: Registration
+      ansible.builtin.import_role:
+        name: registration
+      when: ansible_distribution == "SL-Micro" or ansible_distribution == "SLES"
+    
+    # Install packages
+    - name: Install Packages
+      ansible.builtin.import_role:
+        name: install-packages
+
+    # Install NVIDIA driver packages
+    - name: Install NVIDIA GPU driver
+      ansible.builtin.import_role:
+        name: nvidia-driver
+      when: 
+        - not ansible_host == "localhost"
+        - nvidia.driver_install | default(false) | bool
+
+    - name: Warning when target is a localhost for nvidia driver install
+      ansible.builtin.debug:
+        msg: |
+          "⚠️ NVIDIA drivers need to be installed manually on localhost."
+          "Please refer to the official documentation on installing nvidia drives
+          " on your localhost. After rebooting your localhost, proceed with stage2"
+      when:
+        - ansible_host == "localhost"

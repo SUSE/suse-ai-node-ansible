@@ -1,0 +1,34 @@
+---
+# https://docs.rke2.io/known_issues
+
+- name: Gather system facts
+  ansible.builtin.setup:
+
+- name: Gather service facts
+  ansible.builtin.service_facts: {}
+
+# https://docs.rke2.io/known_issues#firewalld-conflicts-with-default-networking
+- name: Disable firewalld if present
+  ansible.builtin.systemd:
+    name: firewalld
+    state: stopped
+    enabled: false
+  when:
+    - ansible_facts.services is defined
+    - "'firewalld.service' in ansible_facts.services"
+  ignore_errors: true
+  failed_when: false
+
+# If NetworkManager is installed and enabled on your hosts, 
+# ensure that it is configured to ignore CNI-managed interfaces.
+# https://docs.rke2.io/known_issues#networkmanager
+- name: Update rke2-canal configuration when NetworkManager
+  become: true
+  ansible.builtin.blockinfile:
+    path: /etc/NetworkManager/conf.d/rke2-canal.conf
+    block: |
+      [keyfile]
+      unmanaged-devices=interface-name:cali*;interface-name:flannel*
+    create: true
+    mode: 0600
+  when: "'NetworkManager.service' in ansible_facts.services"

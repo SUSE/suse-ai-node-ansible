@@ -1,0 +1,22 @@
+- name: Install RKE2 server on first server node
+  hosts: rke2_servers[0]
+  roles:
+    - rke2_server
+
+- name: Install RKE2 server on other server nodes
+  hosts: rke2_servers
+  tasks:
+    - name: Run server role on non-primary servers
+      include_role:
+        name: rke2_server
+      when: inventory_hostname != groups['rke2_servers'][0]
+
+- name: Confirm all servers are in the cluster
+  hosts: rke2_servers[0]
+  tasks:
+    - name: Wait until all servers are in the cluster
+      command: /var/lib/rancher/rke2/bin/kubectl get nodes -l node-role.kubernetes.io/control-plane --no-headers --kubeconfig /etc/rancher/rke2/rke2.yaml
+      register: kube_cp_nodes
+      retries: 15
+      delay: 30
+      until: groups['rke2_servers'] | length  == kube_cp_nodes.stdout_lines | length

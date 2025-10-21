@@ -1,0 +1,4 @@
+- name: Install RKE2 agent on agents
+  hosts: rke2_agents
+  roles:
+    - rke2_agent

@@ -1,0 +1,35 @@
+---
+
+- name: Download RKE2 and apply workaround
+  include_role:
+    name: rke2_common
+
+- name: Install RKE2
+  become: true
+  shell: >
+    INSTALL_RKE2_CHANNEL={{ rke2.version }} INSTALL_RKE2_TYPE=agent /tmp/rke2_installer.sh
+  register: rke2_install_result
+  retries: 5
+  delay: 10
+  until: rke2_install_result.rc == 0
+
+- name: Ensure config directory exists
+  become: true
+  file:
+    path: /etc/rancher/rke2
+    state: directory
+
+- name: Configure RKE2 agent
+  become: true
+  template:
+    src: config.yaml.j2
+    dest: /etc/rancher/rke2/config.yaml
+  notify: Restart rke2-agent   # only notify if the file changed
+
+- name: Start and enable rke2-agent
+  become: true
+  systemd:
+    name: rke2-agent
+    enabled: true
+    state: started
+

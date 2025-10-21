@@ -1,0 +1,4 @@
+- name: Install NVIDIA gpu-operator
+  hosts: rke2_servers[0]
+  roles:
+    - nvidia-gpu-operator

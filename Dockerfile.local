@@ -1,0 +1,16 @@
+FROM registry.suse.com/bci/python:3.12
+
+WORKDIR /workspace
+
+RUN zypper install -y sudo openssh
+RUN pip install --no-cache-dir ansible
+
+#RUN zypper ar -f -G http://cdn.opensuse.org/tumbleweed/repo/oss repo-oss
+#RUN zypper install -y sshpass
+
+COPY . /workspace
+
+ENV ANSIBLE_FORCE_COLOR=1
+
+# Default command (can be overridden)
+CMD ["ansible-playbook", "-i", "inventory.ini", "playbooks/stage2.yml", "-e", "@extra_vars.yml"]

@@ -1,0 +1,8 @@
+- name: Post-Stage1-Checks
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Post Stage1 Checks
+      ansible.builtin.import_role:
+        name: stage1-post-check
+      when: validate_post_stage1 | default(true) | bool

@@ -1,0 +1,7 @@
+---
+
+# - name: Setup
+#   include_tasks: setup.yml
+
+- name: Deploy rancher
+  include_tasks: rancher.yml
