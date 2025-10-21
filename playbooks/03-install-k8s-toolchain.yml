@@ -1,0 +1,4 @@
+- name: Install K8s ToolChain
+  hosts: rke2_servers[0]
+  roles:
+    - kubernetes-tools

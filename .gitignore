@@ -1,0 +1,27 @@
+# Exclude all .tfvars files, which are likely to contain sensitive data, such as
+# password, private keys, and other secrets. These should not be part of version 
+# control as they are data points which are potentially sensitive and subject 
+# to change depending on the environment.
+ansible.tfvars
+*.tfvars
+*.tfvars.json
+
+# settings files
+extra_vars.yml
+extra_vars.yml.local
+
+# inventory
+inventory.ini
+inventory.yaml
+
+# venv and associated scripts
+.venv/
+.vscode
+
+# misc tool related files
+.python-version
+
+*.bak
+*.swo
+*.backup
+

@@ -1,0 +1,25 @@
+---
+
+# rancher version to use
+rancher_version: 2.12.0
+
+# number of rancher replicas
+rancher_replicas: 1
+
+# rancher hostname
+rancher_hostname: suse-rancher.demo
+
+# rancher bootstrap admin password
+rancher_bootstrap_password: rancher
+
+# indicate whether to use Rancher Prime
+use_rancher_prime: false
+
+# rancher chart
+rancher_helm_repo_url: "{{ rancher_prime_helm_repo_url if use_rancher_prime else 'https://releases.rancher.com/server-charts/stable' }}"
+rancher_helm_repo_name: "{{ 'rancher-prime' if use_rancher_prime else 'rancher-stable' }}"
+rancher_helm_chart_ref: "{{ rancher_helm_repo_name }}/rancher"
+rancher_release: rancher
+rancher_namespace: cattle-system
+rancher_tls_source: rancher
+rancher_tls_secret_name: tls-rancher-ingress

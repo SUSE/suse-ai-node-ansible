@@ -1,0 +1,168 @@
+---
+
+# Install the nvidia driver packages on the servers that has GPU.
+
+- name: Construct cuda url
+  set_fact:
+    construct_cuda_url: >-
+      {% if ansible_distribution in ["openSUSE Leap", "openSUSE Tumbleweed"] %}
+      https://developer.download.nvidia.com/compute/cuda/repos/opensuse{{ ansible_distribution_major_version }}/{{ 'sbsa' if ansible_architecture == 'aarch64' else ansible_architecture }}/
+      {% elif ansible_os_family == "Suse" and ansible_distribution == "SLES" %}
+      https://developer.download.nvidia.com/compute/cuda/repos/sles{{ ansible_distribution_major_version }}/{{ 'sbsa' if ansible_architecture == 'aarch64' else ansible_architecture }}/
+      {% elif ansible_distribution == "SL-Micro" %}
+      {% set sle_version = '15' if ansible_distribution_major_version in ['6'] %}
+      https://developer.download.nvidia.com/compute/cuda/repos/sles{{sle_version}}/{{ 'sbsa' if ansible_architecture == 'aarch64' else ansible_architecture }}/
+      {% else %}
+      unsupported
+      {% endif %}
+
+- name: Set cuda_repo_url
+  set_fact:
+    cuda_repo_url: "{{ construct_cuda_url | trim }}"
+
+- name: Display cuda_repo_url
+  debug:
+    msg: "{{ cuda_repo_url }}"
+
+- name: Check if CUDA repo URL is reachable
+  uri:
+    url: "{{ cuda_repo_url }}"
+    method: HEAD
+    return_content: no
+    status_code: 200
+    timeout: 10
+  register: cuda_repo_check
+  failed_when: cuda_repo_check.status | default(0) != 200
+  changed_when: false
+
+- name: Fail if CUDA repo URL is not reachable
+  fail:
+    msg: "CUDA repo URL {{ cuda_repo_url }} is not reachable!"
+  when: cuda_repo_check is failed
+
+- name: Add a package repository from NVIDIA
+  become: true
+  community.general.zypper_repository:
+    name: cuda
+    repo: "{{cuda_repo_url}}"
+    state: present
+    auto_import_keys: true
+    runrefresh: true
+
+- name: Check for GPU using lspci
+  become: true
+  command: lspci
+  register: lspci_out
+
+- name: Determine if GPU is present
+  set_fact:
+    has_gpu: "{{ lspci_out.stdout is search('VGA compatible controller.*NVIDIA|3D controller.*NVIDIA', ignorecase=True) }}"
+
+- name: Check if nvidia-smi is working
+  become: true
+  ansible.builtin.shell: nvidia-smi
+  register: nvidia_smi_result
+  changed_when: false
+  failed_when: false
+  when: has_gpu | default(false)
+
+- name: Read os-release info
+  shell: |
+    source /etc/os-release
+    echo $ID
+  register: osid
+
+- name: Set driver package variables
+  set_fact:
+    package_name: "{{ 'nv-prefer-signed-open-driver' if osid.stdout == 'sles' else 'nvidia-open-driver-G06-signed-cuda-kmp-default' }}"
+    fallback_driver_version: "{{ fallback_driver_version_sles if osid.stdout == 'sles' else fallback_driver_version_sle_micro }}"
+
+- name: Display the package name
+  debug:
+    msg: "{{ package_name }}"
+
+# Install the latest NVIDIA graphic driver packages when the target host has Nvidia GPU
+- name: Install NVIDIA driver package (latest)
+  become: true
+  block:
+    - name: Install latest version
+      shell: >
+        {% if ansible_distribution == 'SL-Micro' %}
+        transactional-update --continue --quiet run bash -c "zypper in -y --auto-agree-with-licenses {{ package_name }}"
+        {% else %}
+        bash -c "zypper in -y --auto-agree-with-licenses {{ package_name }}"
+        {% endif %}
+      register: install_package_result
+
+    - name: Get installed version of package
+      shell: >
+        {% if ansible_distribution == 'SL-Micro' %}
+        transactional-update --continue --quiet run bash -c "rpm -qa --queryformat '%{VERSION}\n' {{ package_name }} | cut -d '_' -f1 | sort -u | tail -n 1"
+        {% else %}
+        bash -c "rpm -qa --queryformat '%{VERSION}\n' {{ package_name }} | cut -d '_' -f1 | sort -u | tail -n 1"
+        {% endif %}
+      register: query_result
+      failed_when: query_result.rc != 0 or query_result.stdout == ""
+
+    - name: Set latest_version
+      set_fact:
+        latest_version: "{{ query_result.stdout }}"
+
+    - name: Display latest_version
+      debug:
+        msg: "{{ package_name }} latest version is {{ latest_version }}"
+
+    - name: Check if nvidia-container-toolkit.repo exists
+      stat:
+        path: /etc/zypp/repos.d/nvidia-container-toolkit.repo
+      register: nvidia_container_toolkit_repo_file
+
+    - name: Add container toolkit repo for validation
+      shell:
+        zypper ar --refresh -G https://nvidia.github.io/libnvidia-container/stable/rpm/nvidia-container-toolkit.repo
+      when: not nvidia_container_toolkit_repo_file.stat.exists
+
+    - name: Install nvidia-container-toolkit
+      ansible.builtin.zypper:
+        name: nvidia-container-toolkit
+        disable_gpg_check: true
+        state: present
+
+    - name: Install latest package nvidia-compute-utils-G06
+      shell: >
+        {% if ansible_distribution == 'SL-Micro' %}
+        transactional-update --continue --quiet run bash -c "zypper in -y --auto-agree-with-licenses nvidia-compute-utils-G06={{ latest_version }}"
+        {% else %}
+        bash -c "zypper in -y --auto-agree-with-licenses nvidia-compute-utils-G06={{ latest_version }}"
+        {% endif %}
+      register: compute_utils_install
+  when:
+    - has_gpu | default(false)
+  notify: Reboot after update
+
+- name: Handle fallback if latest version install fails
+  become: true
+  block:
+    - name: Remove broken driver package
+      ansible.builtin.zypper:
+        name: "{{ package_name }}"
+        state: absent
+
+    - name: Install fallback driver version
+      ansible.builtin.zypper:
+        name: "{{ package_name }}={{ fallback_driver_version }}"
+        state: present
+        disable_gpg_check: true
+
+    - name: Install fallback compute-utils
+      ansible.builtin.zypper:
+        name: "nvidia-compute-utils-G06={{ fallback_driver_version }}"
+        state: present
+        disable_gpg_check: true
+
+  when:
+    - compute_utils_install.stdout is defined
+    - "'No provider of' in compute_utils_install.stdout"
+    - has_gpu | default(false)
+  notify: Reboot after update
+

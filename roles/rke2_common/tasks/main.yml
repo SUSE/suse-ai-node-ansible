@@ -1,0 +1,12 @@
+---
+
+- name: Apply workaround to known issues
+  include_tasks: workaround.yml
+
+- name: Download RKE2 installer
+  become: true
+  get_url:
+    url: "{{ rke2_installer_url }}"
+    dest: /tmp/rke2_installer.sh
+    mode: 0755
+

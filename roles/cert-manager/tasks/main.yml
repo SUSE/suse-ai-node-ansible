@@ -1,0 +1,5 @@
+---
+
+- name: Deploy cert-manager
+  include_tasks: cert-manager.yml
+

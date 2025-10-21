@@ -1,0 +1,5 @@
+- name: Stage1 playbook
+  import_playbook: stage1.yml
+
+- name: Stage2 playbook
+  import_playbook: stage2.yml

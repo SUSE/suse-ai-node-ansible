@@ -1,0 +1,5 @@
+[rke2_servers]
+rke2_server1 ansible_host=localhost
+
+[all:vars]
+ansible_user=<SSH_USER>

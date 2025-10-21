@@ -1,0 +1,19 @@
+---
+
+- name: Rebooting if necessary
+  become: yes
+  ansible.builtin.reboot:
+    msg: "Rebooting {{ ansible_hostname }} for the changes take effect."
+    reboot_timeout: "{{ reboot_wait_timeout | default(600) }}"
+  register: node_reboot
+  listen: Reboot after update
+  when:
+    - not ansible_host == "localhost"
+
+- name: Wait for port 22
+  ansible.builtin.wait_for:
+    port: 22
+    timeout: "{{ reboot_wait_timeout | default(600) }}"
+  when: 
+    - node_reboot.changed or node_force_reboot.changed
+    - not ansible_host == 'localhost'

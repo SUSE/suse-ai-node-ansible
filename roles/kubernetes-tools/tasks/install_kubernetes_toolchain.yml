@@ -1,0 +1,40 @@
+---
+
+- name: set arch
+  set_fact:
+    image_arch: "{{ 'arm64' if ansible_facts.architecture == 'aarch64' else 'amd64' }}"
+
+- name: Ensure kubectl symlink exists in /usr/local/bin
+  become: true
+  file:
+    src: /var/lib/rancher/rke2/bin/kubectl
+    dest: /usr/local/bin/kubectl
+    state: link
+    force: yes
+    mode: '0755'
+
+- name: Install helm
+  become: true
+  unarchive:
+    src: "{{ helm_download_archive }}"
+    dest: /usr/local/bin/
+    include: ["linux-{{ image_arch }}/helm"]
+    owner: root
+    group: root
+    remote_src: true
+    extra_opts:
+     - --strip-components=1
+  retries: 5
+  delay: 30
+
+- name: Install k9s
+  become: true
+  unarchive:
+    src: "{{ k9s_download_archive }}"
+    dest: /usr/local/bin/
+    include: [k9s]
+    owner: root
+    group: root
+    remote_src: true
+  retries: 5
+  delay: 5
