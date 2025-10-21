@@ -1,0 +1,24 @@
+- name: Post stage1 check
+  import_playbook: stage1-post-check.yml
+  when: not (skip_stage1_post_check | default(False))
+
+- name: Install RKE2 server
+  import_playbook: 01-install-rke2.yml
+
+- name: Install RKE2 agent
+  import_playbook: 02-install-rke2-agent.yml
+
+- name: Install Kubernertes tools - helm, k9s
+  import_playbook: 03-install-k8s-toolchain.yml
+
+- name: Install cert-manager
+  import_playbook: 04-install-cert-manager.yml
+  when: cert_manager_deploy | default(True)
+
+- name: Install Rancher
+  import_playbook: 05-install-rancher.yml
+  when: rancher_enabled | default(False)
+
+- name: Install NVIDIA gpu-operator
+  import_playbook: 06-install-gpu-operator.yml
+  when: nvidia.gpu_operator_deploy | default(False)

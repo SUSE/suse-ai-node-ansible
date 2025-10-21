@@ -1,0 +1,23 @@
+# Install suse packages
+- name: Check if SUSE packages "{{ suse_packages }}" are installed
+  become: true
+  shell: |
+    rpm -q {{ suse_packages | join(' ') }}
+  register: rpm_check
+  changed_when: false
+  failed_when: false
+  when: suse_packages | length > 0
+
+- name: Install SUSE packages "{{ suse_packages }}" {{ ansible_distribution }}
+  become: true
+  shell: |
+    {% if ansible_distribution == "SL-Micro" -%}
+    transactional-update --continue -n pkg install --auto-agree-with-licenses {{ suse_packages | join(' ') }}
+    {% else %}
+    zypper --non-interactive install {{ suse_packages | join(' ') }}
+    {% endif %}
+  register: install_suse_packages
+  when:
+    - suse_packages | length > 0
+    - rpm_check.rc != 0   # run only if rpm -q failed for any package
+  notify: Reboot after update #Reboot handler in roles/common

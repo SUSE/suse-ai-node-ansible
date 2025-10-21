@@ -1,0 +1,9 @@
+{% if inventory_hostname != groups['rke2_servers'][0] %}
+server: "https://{{ rke2.lb_address | default(hostvars[groups['rke2_servers'][0]].ansible_host, true) }}:9345"
+{% endif %}
+token: "{{ rke2.token }}"
+tls-san:
+  - {{ inventory_hostname }}
+  - {{ hostvars[inventory_hostname]['ansible_host'] }}
+  - {{ rke2.lb_address | default(hostvars[groups['rke2_servers'][0]].ansible_host, true) }}
+write-kubeconfig-mode: "0644"

@@ -1,0 +1,7 @@
+---
+
+helm_version: v3.18.6
+k9s_version: v0.50.9
+
+helm_download_archive: https://get.helm.sh/helm-{{ helm_version }}-linux-{{ image_arch }}.tar.gz
+k9s_download_archive: https://github.com/derailed/k9s/releases/download/{{ k9s_version }}/k9s_Linux_{{ image_arch }}.tar.gz

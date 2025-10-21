@@ -1,0 +1,4 @@
+- name: Install Rancher
+  hosts: rke2_servers[0]
+  roles:
+    - rancher

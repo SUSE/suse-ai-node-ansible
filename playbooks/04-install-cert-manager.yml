@@ -1,0 +1,4 @@
+- name: Install cert-manager
+  hosts: rke2_servers[0]
+  roles:
+    - cert-manager

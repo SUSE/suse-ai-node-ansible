@@ -1,0 +1,23 @@
+---
+
+- name: Check if system is already registered
+  become: true
+  command: "SUSEConnect --status-text"
+  register: scc_status
+  ignore_errors: true
+
+- name: Register
+  become: true
+  ansible.builtin.shell: |
+    {% if "Micro" in ansible_facts.distribution %}transactional-update register{% else %}SUSEConnect{% endif %} --url {{ registration_server | default("https://scc.suse.com") }} --email {{ registration_email }} --regcode "{{ registration_code }}"
+  register: register_result
+  when: "'Not Registered' in scc_status.stdout"
+  failed_when: false # validation in next task
+
+- name: Fail if registration unsuccessful
+  ansible.builtin.fail:
+    msg: "System registration failed. Check registration_email and registration_code"
+  when: 
+    - "'Not Registered' in scc_status.stdout"
+    - (register_result.rc != 0 or 'Error' in register_result.stdout or 'Not Registered' in register_result.stdout)
+

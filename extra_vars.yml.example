@@ -1,0 +1,23 @@
+---
+# SLE
+registration_server: "https://scc.suse.com"
+registration_email: ""
+registration_code: ""
+
+# Nvidia
+nvidia:
+  driver_install: false # Set to true if nvidia drivers need to be installed on nodes with GPU
+  gpu_operator_deploy: false # Set to true if you want to deploy nvidia gpu-operator
+
+# RKE2
+rke2:
+  version: v1.33.5+rke2r1
+  token: suse-rke2-rancher-token
+  lb_address: "" #pre-configured loadbalancer. When empty, the playbooks use the IP address of the first server.
+
+# Rancher
+rancher_enabled: true
+rancher_version: 2.12.1 #version should be compatible with rke2.version
+rancher_replicas: 3
+rancher_hostname: suse-rancher.example.com
+rancher_bootstrap_password: rancher

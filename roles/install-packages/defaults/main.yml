@@ -1,0 +1,1 @@
+suse_packages: ["jq", "python311-PyYAML", "curl", "git", "pciutils"]
