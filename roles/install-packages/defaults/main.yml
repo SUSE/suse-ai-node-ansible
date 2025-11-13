@@ -1,1 +1,1 @@
-suse_packages: ["curl", "pciutils"]
+suse_packages: ["curl", "jq", "pciutils"]
