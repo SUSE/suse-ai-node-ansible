@@ -11,7 +11,8 @@
     dest: ~/rancher-values.yaml
 
 - name: Deploy latest rancher helm chart
-  shell: >
+  shell: |
+    helm repo update
     helm upgrade --install {{ rancher_release }} {{ rancher_helm_chart_ref }} --atomic \
     --version {{ rancher_version }} --create-namespace --namespace {{ rancher_namespace }} \
     -f rancher-values.yaml

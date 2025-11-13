@@ -7,7 +7,7 @@
 - name: Install RKE2
   become: true
   shell: >
-    INSTALL_RKE2_CHANNEL={{ rke2.version }} INSTALL_RKE2_TYPE=server /tmp/rke2_installer.sh
+    INSTALL_RKE2_CHANNEL={{ rke2.version }} INSTALL_RKE2_TYPE=server INSTALL_RKE2_METHOD=tar /tmp/rke2_installer.sh
   register: rke2_install_result
   retries: 5
   delay: 10
