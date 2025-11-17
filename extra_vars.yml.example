@@ -17,7 +17,7 @@ rke2:
 
 # Rancher
 rancher_enabled: true
-rancher_version: 2.12.1 #version should be compatible with rke2.version
+rancher_version: 2.12.3 #version should be compatible with rke2.version
 rancher_replicas: 3
 rancher_hostname: suse-rancher.example.com
 rancher_bootstrap_password: rancher
