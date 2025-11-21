@@ -18,8 +18,8 @@
     -f rancher-values.yaml
   register: rancher_deploy_result
   until: rancher_deploy_result.rc == 0
-  retries: 3
-  delay: 20
+  retries: 10
+  delay: 30
 
 - name: Wait for Rancher to be rolled out
   shell: >

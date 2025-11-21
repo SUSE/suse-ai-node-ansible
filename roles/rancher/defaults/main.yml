@@ -1,7 +1,7 @@
 ---
 
 # rancher version to use
-rancher_version: 2.12.0
+rancher_version: 2.12.3
 
 # number of rancher replicas
 rancher_replicas: 1
