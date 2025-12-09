@@ -8,10 +8,10 @@
   failed_when: false
   when: suse_packages | length > 0
 
-- name: Install SUSE packages "{{ suse_packages }}" {{ ansible_distribution }}
+- name: Install SUSE packages "{{ suse_packages }}" {{ ansible_facts['distribution'] }}
   become: true
   shell: |
-    {% if ansible_distribution == "SL-Micro" -%}
+    {% if ansible_facts['distribution'] == "SL-Micro" -%}
     transactional-update --continue -n pkg install --auto-agree-with-licenses {{ suse_packages | join(' ') }}
     {% else %}
     zypper --non-interactive install {{ suse_packages | join(' ') }}

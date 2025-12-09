@@ -79,6 +79,11 @@ ansible_user=<SSH_USER>
 docker build -t suse-ai-node-ansible-runner -f Dockerfile.local .
 ```
 
+If you want to use the newer buildx:
+```bash
+docker buildx build -t suse-ai-node-ansible-runner -f Dockerfile.local --load .
+```
+
 ### 2. Create inventory.ini file 
 ```bash
 cp inventory.ini.example inventory.ini

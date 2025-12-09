@@ -1,8 +1,10 @@
 ---
-# SLE
-registration_server: "https://scc.suse.com"
-registration_email: ""
-registration_code: ""
+# SCC
+scc_registration:
+  server: "https://scc.suse.com"
+  email: "" #Leave empty if nodes are already registered with SCC
+  sles_code: "" #Leave empty if nodes are already registered with SCC
+  sle_micro_code: "" #Leave empty if nodes are already registered with SCC
 
 # Nvidia
 nvidia:
@@ -13,7 +15,7 @@ nvidia:
 rke2:
   version: v1.33.5+rke2r1
   token: suse-rke2-rancher-token
-  lb_address: "" #pre-configured loadbalancer. When empty, the playbooks use the IP address of the first server.
+  lb_address: "" # Set this to the address of an existing load balancer. If blank, the playbooks default to using the IP of the first RKE2 server as the server URL for all other nodes.
 
 # Rancher
 rancher_enabled: true

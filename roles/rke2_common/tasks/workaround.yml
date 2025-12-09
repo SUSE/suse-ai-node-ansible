@@ -9,6 +9,7 @@
 
 # https://docs.rke2.io/known_issues#firewalld-conflicts-with-default-networking
 - name: Disable firewalld if present
+  become: true
   ansible.builtin.systemd:
     name: firewalld
     state: stopped

@@ -1,3 +1,5 @@
+# Note: Each host must have a unique ansible_host value (IP address).
+
 [rke2_servers]
 rke2_server1 ansible_host=192.168.1.10
 rke2_server2 ansible_host=192.168.1.11

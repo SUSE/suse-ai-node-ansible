@@ -5,14 +5,14 @@
     - name: Debug facts
       ansible.builtin.debug:
         msg:
-          - "ansible_os_family = {{ ansible_os_family }}"
-          - "ansible_distribution = {{ ansible_distribution }}"
+          - "ansible_os_family = {{ ansible_facts['os_family'] }}"
+          - "ansible_distribution = {{ ansible_facts['distribution'] }}"
 
     # Pre-Check
     - name: Fail if not SUSE family
       ansible.builtin.assert:
         that:
-          - ansible_os_family == 'Suse' or ansible_distribution == 'SL-Micro'
+          - ansible_facts['os_family'] == 'Suse' or ansible_facts['distribution'] == 'SL-Micro'
         fail_msg: "Supported only on SUSE family operating systems."
         success_msg: "This is a SUSE system."
 
@@ -20,7 +20,7 @@
     - name: Registration
       ansible.builtin.import_role:
         name: registration
-      when: ansible_distribution == "SL-Micro" or ansible_distribution == "SLES"
+      when: ansible_facts['distribution'] == "SL-Micro" or ansible_facts['distribution'] == "SLES"
     
     # Install packages
     - name: Install Packages
@@ -34,6 +34,7 @@
       when: 
         - not ansible_host == "localhost"
         - nvidia.driver_install | default(false) | bool
+        - ansible_facts.get('machine_id') != hostvars['localhost'].ansible_facts.get('machine_id')
 
     - name: Warning when target is a localhost for nvidia driver install
       ansible.builtin.debug:
@@ -42,4 +43,4 @@
           "Please refer to the official documentation on installing nvidia drives
           " on your localhost. After rebooting your localhost, proceed with stage2"
       when:
-        - ansible_host == "localhost"
+        - ansible_host == "localhost"  or ansible_facts.get('machine_id') == hostvars['localhost'].ansible_facts.get('machine_id')

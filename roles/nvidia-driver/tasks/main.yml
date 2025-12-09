@@ -5,13 +5,13 @@
 - name: Construct cuda url
   set_fact:
     construct_cuda_url: >-
-      {% if ansible_distribution in ["openSUSE Leap", "openSUSE Tumbleweed"] %}
-      https://developer.download.nvidia.com/compute/cuda/repos/opensuse{{ ansible_distribution_major_version }}/{{ 'sbsa' if ansible_architecture == 'aarch64' else ansible_architecture }}/
-      {% elif ansible_os_family == "Suse" and ansible_distribution == "SLES" %}
-      https://developer.download.nvidia.com/compute/cuda/repos/sles{{ ansible_distribution_major_version }}/{{ 'sbsa' if ansible_architecture == 'aarch64' else ansible_architecture }}/
-      {% elif ansible_distribution == "SL-Micro" %}
-      {% set sle_version = '15' if ansible_distribution_major_version in ['6'] %}
-      https://developer.download.nvidia.com/compute/cuda/repos/sles{{sle_version}}/{{ 'sbsa' if ansible_architecture == 'aarch64' else ansible_architecture }}/
+      {% if ansible_facts['distribution'] in ["openSUSE Leap", "openSUSE Tumbleweed"] %}
+      https://developer.download.nvidia.com/compute/cuda/repos/opensuse{{ ansible_facts['distribution_major_version'] }}/{{ 'sbsa' if ansible_facts['architecture'] == 'aarch64' else ansible_facts['architecture'] }}/
+      {% elif ansible_facts['os_family'] == "Suse" and ansible_facts['distribution'] == "SLES" %}
+      https://developer.download.nvidia.com/compute/cuda/repos/sles{{ ansible_facts['distribution_major_version'] }}/{{ 'sbsa' if ansible_facts['architecture'] == 'aarch64' else ansible_facts['architecture'] }}/
+      {% elif ansible_facts['distribution'] == "SL-Micro" %}
+      {% set sle_version = '15' if ansible_facts['distribution_major_version'] in ['6'] %}
+      https://developer.download.nvidia.com/compute/cuda/repos/sles{{sle_version}}/{{ 'sbsa' if ansible_facts['architecture'] == 'aarch64' else ansible_facts['architecture'] }}/
       {% else %}
       unsupported
       {% endif %}
@@ -87,7 +87,7 @@
   block:
     - name: Install latest version
       shell: >
-        {% if ansible_distribution == 'SL-Micro' %}
+        {% if ansible_facts['distribution'] == 'SL-Micro' %}
         transactional-update --continue --quiet run bash -c "zypper in -y --auto-agree-with-licenses {{ package_name }}"
         {% else %}
         bash -c "zypper in -y --auto-agree-with-licenses {{ package_name }}"
@@ -96,7 +96,7 @@
 
     - name: Get installed version of package
       shell: >
-        {% if ansible_distribution == 'SL-Micro' %}
+        {% if ansible_facts['distribution'] == 'SL-Micro' %}
         transactional-update --continue --quiet run bash -c "rpm -qa --queryformat '%{VERSION}\n' {{ package_name }} | cut -d '_' -f1 | sort -u | tail -n 1"
         {% else %}
         bash -c "rpm -qa --queryformat '%{VERSION}\n' {{ package_name }} | cut -d '_' -f1 | sort -u | tail -n 1"
@@ -130,7 +130,7 @@
 
     - name: Install latest package nvidia-compute-utils-G06
       shell: >
-        {% if ansible_distribution == 'SL-Micro' %}
+        {% if ansible_facts['distribution'] == 'SL-Micro' %}
         transactional-update --continue --quiet run bash -c "zypper in -y --auto-agree-with-licenses nvidia-compute-utils-G06={{ latest_version }}"
         {% else %}
         bash -c "zypper in -y --auto-agree-with-licenses nvidia-compute-utils-G06={{ latest_version }}"
