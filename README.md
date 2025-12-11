@@ -28,6 +28,8 @@ This project automates the setup of a high-availability RKE2 cluster with Ranche
 
 ## Inventory Example
 
+Identify the servers and agents that must belong to the same RKE2 cluster.
+
 This is an example of inventory.ini file with 3 RKE2 Servers and 2 RKE2 Agents.
 ```bash
 #inventory.ini.example
