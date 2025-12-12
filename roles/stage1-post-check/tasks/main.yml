@@ -30,7 +30,7 @@
   register: nvidia_smi_result
   changed_when: false
   failed_when: nvidia_smi_result.rc != 0
-  when: has_gpu | default(false)
+  when: has_gpu | default(false) and nvidia.driver_install
 
 - name: Validate via nvidia-ctk
   become: true
@@ -38,7 +38,7 @@
     nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
   register: nvidia_ctk_result
   ignore_errors: true # validation in next task
-  when: has_gpu | default(false)
+  when: has_gpu | default(false) and nvidia.driver_install
 
 - name: Assert the nvidia-ctk result
   assert:
@@ -47,5 +47,5 @@
       -  "'error' not in nvidia_ctk_result.stdout | lower"
     success_msg: "nvidia-ctk validation passed."
     fail_msg: "nvidia-ctk validation failed."
-  when: has_gpu | default(false)
+  when: has_gpu | default(false) and nvidia.driver_install
 

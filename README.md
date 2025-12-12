@@ -72,6 +72,11 @@ ansible_user=<SSH_USER>
 
 - Mount your SSH keys under `~/.ssh` to enable access to target nodes.
 - The load balancer rke2.lb_address provided in the extra_vars.yml must route port 9345 and 443 to the RKE2 server nodes.
+- Playbooks handle the following known issues of RKE2:
+    https://docs.rke2.io/known_issues#firewalld-conflicts-with-default-networking by disabling the firewalld.
+    https://docs.rke2.io/known_issues#networkmanager ensuring that NetworkManager is configured to ignore CNI-managed interfaces if it's enabled.
+
+
 
 ## Usage
 
