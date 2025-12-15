@@ -1,25 +1,26 @@
 ---
 
 # rancher version to use
-rancher_version: 2.12.3
+rancher_version: "{{ rancher.version | default('2.3.0') }}"
 
 # number of rancher replicas
-rancher_replicas: 1
+rancher_replicas: "{{ rancher.replicas | default(1) }}"
 
 # rancher hostname
-rancher_hostname: suse-rancher.demo
+rancher_hostname: "{{ rancher.hostname | default('suse-rancher.demo') }}"
 
 # rancher bootstrap admin password
-rancher_bootstrap_password: rancher
+rancher_bootstrap_password: "{{ rancher.bootstrap_password | default('rancher') }}"
 
 # indicate whether to use Rancher Prime
-use_rancher_prime: false
+use_rancher_prime: "{{ rancher.use_prime | default(False) }}"
 
 # rancher chart
-rancher_helm_repo_url: "{{ rancher_prime_helm_repo_url if use_rancher_prime else 'https://releases.rancher.com/server-charts/stable' }}"
+rancher_helm_repo_url: "{{ rancher.prime_helm_repo_url if use_rancher_prime else 'https://releases.rancher.com/server-charts/stable' }}"
 rancher_helm_repo_name: "{{ 'rancher-prime' if use_rancher_prime else 'rancher-stable' }}"
 rancher_helm_chart_ref: "{{ rancher_helm_repo_name }}/rancher"
-rancher_release: rancher
-rancher_namespace: cattle-system
-rancher_tls_source: rancher
-rancher_tls_secret_name: tls-rancher-ingress
+rancher_release: "{{ rancher.release | default('rancher') }}"
+rancher_namespace: "{{ rancher.namespace | default('cattle-system') }}"
+rancher_tls_source: "{{ rancher.tls_source | default('rancher') }}"
+rancher_tls_secret_name: "{{ rancher.tls_secret_name | default('tls-rancher-ingress') }}"
+rancher_extraAnnotations: "{{ rancher.extraAnnotations | default({}) }}"

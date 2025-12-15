@@ -150,9 +150,9 @@ run ssh -v user@host to debug connection/auth issues.
 ### 7. Additional information
 
 #### 7a. Rancher Prime
-By default, we use the community helm chart to deploy rancher. In order to use Rancher Prime, please add the following entries in the extra_vars.yml:
+By default, we use the community helm chart to deploy rancher. In order to use Rancher Prime, please add the following entries in the *rancher:* section of extra_vars.yml:
 ```yaml
-use_rancher_prime: true
-rancher_prime_helm_repo_url: "<rancher-prime-helm-chart-repo-url>"
+use_prime: true
+prime_helm_repo_url: "<rancher-prime-helm-chart-repo-url>"
 ```
 To learn more about the Rancher Prime Helm chart repository URL, see the [Prime-only documentation](https://scc.suse.com/rancher-docs/rancherprime/latest/en/reference-guide.html#chart-repo-url) using your [SUSE Customer Center (SCC)](https://scc.suse.com/) credentials to log in.

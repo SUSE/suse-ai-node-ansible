@@ -13,13 +13,15 @@ nvidia:
 
 # RKE2
 rke2:
-  version: v1.33.5+rke2r1
+  version: v1.34.3-rc2+rke2r1
   token: suse-rke2-rancher-token
   lb_address: "" # Set this to the address of an existing load balancer. If blank, the playbooks default to using the IP of the first RKE2 server as the server URL for all other nodes.
 
 # Rancher
-rancher_enabled: true
-rancher_version: 2.12.3 #version should be compatible with rke2.version
-rancher_replicas: 3
-rancher_hostname: suse-rancher.example.com
-rancher_bootstrap_password: rancher
+rancher:
+  enabled: true
+  version: 2.13.0 #version should be compatible with rke2.version
+  replicas: 1
+  hostname: suse-rancher.example.com
+  bootstrap_password: rancher
+

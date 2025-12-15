@@ -14,4 +14,4 @@ ingress:
   tls:
     source: {{ rancher_tls_source }}
     secretName: {{ rancher_tls_secret_name }}
-  extraAnnotations: {{ rancher_extraAnnotations | default({}) }}
+  extraAnnotations: {{ rancher_extraAnnotations }}

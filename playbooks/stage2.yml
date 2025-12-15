@@ -17,7 +17,7 @@
 
 - name: Install Rancher
   import_playbook: 05-install-rancher.yml
-  when: rancher_enabled | default(False)
+  when: rancher.enabled | default(False)
 
 - name: Install NVIDIA gpu-operator
   import_playbook: 06-install-gpu-operator.yml

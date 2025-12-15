@@ -20,7 +20,7 @@
 
 - name: Fail if registration unsuccessful
   ansible.builtin.fail:
-    msg: "System registration failed. Check registration_email and registration_code"
+    msg: "System registration failed. Check the registration"
   when: 
     - "'Not Registered' in scc_status.stdout"
     - (register_result.rc != 0 or 'Error' in register_result.stdout or 'Not Registered' in register_result.stdout)
