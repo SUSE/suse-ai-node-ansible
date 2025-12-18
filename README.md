@@ -73,8 +73,8 @@ ansible_user=<SSH_USER>
 - Mount your SSH keys under `~/.ssh` to enable access to target nodes.
 - The load balancer rke2.lb_address provided in the extra_vars.yml must route port 9345 and 443 to the RKE2 server nodes.
 - Playbooks handle the following known issues of RKE2:
-    https://docs.rke2.io/known_issues#firewalld-conflicts-with-default-networking by disabling the firewalld.
-    https://docs.rke2.io/known_issues#networkmanager ensuring that NetworkManager is configured to ignore CNI-managed interfaces if it's enabled.
+    * https://docs.rke2.io/known_issues#firewalld-conflicts-with-default-networking by disabling the firewalld.
+    * https://docs.rke2.io/known_issues#networkmanager ensuring that NetworkManager is configured to ignore CNI-managed interfaces if it's enabled.
 
 
 
@@ -156,3 +156,20 @@ use_prime: true
 prime_helm_repo_url: "<rancher-prime-helm-chart-repo-url>"
 ```
 To learn more about the Rancher Prime Helm chart repository URL, see the [Prime-only documentation](https://scc.suse.com/rancher-docs/rancherprime/latest/en/reference-guide.html#chart-repo-url) using your [SUSE Customer Center (SCC)](https://scc.suse.com/) credentials to log in.
+
+
+### 8. Validations
+
+Successfully tested against following target host OS versions:
+
+| Arch                   | Distro                 | Version              | Succesfully Validated (1.0.0 release)             |
+| ---------------------  | ---------------------- | -------------------- | --------------------------------------------------|
+| x86_64                 | sle-micro              | 6.0                  |  yes                                              |
+| x86_64                 | sle-micro              | 6.1                  |  yes                                              |
+| arm64                  | sle-micro              | 6.0                  |  yes                                              |
+| arm64                  | sle-micro              | 6.1                  |  yes                                              |
+| x86_64                 | sles                   | 15-sp6               |  yes                                              |
+| arm64                  | sles                   | 15-sp6               |  yes                                              |
+| x86_64                 | sles                   | 15-sp7               |  yes                                              |
+| arm64                  | sles                   | 15-sp7               |  yes                                              |
+| x86_64                 | leap                   | 15.6                 |  yes                                              |
