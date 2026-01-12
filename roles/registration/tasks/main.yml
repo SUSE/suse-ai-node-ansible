@@ -1,4 +1,15 @@
 ---
+- name: Wait for system management lock to be released
+  become: true
+  command: zypper --non-interactive ps
+  register: lock_check
+  retries: 5
+  delay: 15
+  until: lock_check.rc == 0
+  failed_when:
+    - lock_check.rc != 0
+    - "'System management is locked by the application' not in lock_check.stderr"
+  ignore_errors: true
 
 - name: Check if system is already registered
   become: true
