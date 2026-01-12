@@ -17,6 +17,8 @@
     zypper --non-interactive install {{ suse_packages | join(' ') }}
     {% endif %}
   register: install_suse_packages
+  retries: 2
+  delay: 60
   when:
     - suse_packages | length > 0
     - rpm_check.rc != 0   # run only if rpm -q failed for any package
