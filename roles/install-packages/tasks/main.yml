@@ -8,6 +8,18 @@
   failed_when: false
   when: suse_packages | length > 0
 
+- name: Wait for system management lock to be released
+  become: true
+  command: zypper --non-interactive ps
+  register: lock_check
+  retries: 5
+  delay: 15
+  until: lock_check.rc == 0
+  failed_when:
+    - lock_check.rc != 0
+    - "'System management is locked by the application' not in lock_check.stderr"
+  ignore_errors: true
+
 - name: Install SUSE packages "{{ suse_packages }}" {{ ansible_facts['distribution'] }}
   become: true
   shell: |
@@ -17,7 +29,7 @@
     zypper --non-interactive install {{ suse_packages | join(' ') }}
     {% endif %}
   register: install_suse_packages
-  retries: 2
+  retries: 5
   delay: 60
   when:
     - suse_packages | length > 0

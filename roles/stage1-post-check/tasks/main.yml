@@ -1,5 +1,10 @@
 ---
 
+- name: Wait for SSH connection
+  wait_for:
+    port: 22
+    timeout: 360
+
 # Packages
 - name: Check that each package in {{ suse_packages }} is installed
   become: true
