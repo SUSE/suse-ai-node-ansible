@@ -5,6 +5,7 @@
   ansible.builtin.reboot:
     msg: "Rebooting {{ ansible_facts['hostname'] }} for the changes take effect."
     reboot_timeout: "{{ reboot_wait_timeout | default(600) }}"
+    post_reboot_delay: 40
   register: node_reboot
   listen: Reboot after update
   when:
