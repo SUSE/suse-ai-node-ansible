@@ -9,6 +9,7 @@
   failed_when:
     - lock_check.rc != 0
     - "'System management is locked by the application' not in lock_check.stderr"
+    - "'No processes using deleted files found' not in lock_check.stdout"
   ignore_errors: true
 
 - name: Check if system is already registered
