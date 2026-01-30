@@ -4,15 +4,27 @@
   kubernetes.core.helm_repository:
     repo_url: "{{ rancher_helm_repo_url }}"
     name: "{{ rancher_helm_repo_name }}"
+    state: present
+
+- name: Validate rancher chart version exists
+  ansible.builtin.command:
+    cmd: >
+      helm show chart {{ rancher_helm_chart_ref }} --version {{ rancher_version }}
+  register: helm_version_check
+  changed_when: false
+
+- name: Fail if rancher helm chart version does not exist
+  ansible.builtin.fail:
+    msg: "Helm chart version {{ rancher_version }} does not exist in repo {{ rancher_helm_repo_url }}"
+  when: helm_version_check.rc != 0
 
 - name: Copy rancher-values.yaml
   template:
     src: rancher-values.yaml.j2
     dest: ~/rancher-values.yaml
 
-- name: Deploy latest rancher helm chart
+- name: Deploy rancher helm chart
   shell: |
-    helm repo update
     helm upgrade --install {{ rancher_release }} {{ rancher_helm_chart_ref }} --atomic \
     --version {{ rancher_version }} --create-namespace --namespace {{ rancher_namespace }} \
     -f rancher-values.yaml
