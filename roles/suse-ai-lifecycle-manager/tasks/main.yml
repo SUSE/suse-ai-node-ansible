@@ -1,0 +1,36 @@
+---
+
+- name: Install SUSE AI Operator via Helm
+  kubernetes.core.helm:
+    name: "{{ operator_release_name }}"
+    chart_ref: "{{ operator_chart }}"
+    release_namespace: "{{ operator_namespace }}"
+    chart_version: "{{ operator_chart_version }}"
+    create_namespace: true
+    wait: true
+    atomic: true
+    timeout: 10m0s
+
+- name: Copy extension-crd.yaml
+  template:
+    src: extension-crd.yaml.j2
+    dest: ~/extension-crd.yaml
+
+- name: Apply CRD to the cluster
+  shell: >
+    kubectl apply -f ~/extension-crd.yaml
+  register: crd_apply
+  changed_when: "'configured' in crd_apply.stdout or 'created' in crd_apply.stdout"
+
+- name: Wait for CR to reach Installed phase
+  shell: >
+    kubectl get {{ cr_kind | lower }} {{ cr_name }}
+    -o jsonpath='{.status.phase}' 2>/dev/null || echo ""
+  register: cr_status
+  retries: 12
+  delay: 30
+  until:
+    - cr_status.stdout is defined
+    - cr_status.stdout | length > 0
+    - cr_status.stdout == "Installed"
+  changed_when: false

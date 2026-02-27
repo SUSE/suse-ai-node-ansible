@@ -25,3 +25,6 @@ rancher:
   hostname: suse-rancher.example.com
   bootstrap_password: rancher
 
+# Lifecycle Manager
+lifecycle_manager:
+  enabled: true
