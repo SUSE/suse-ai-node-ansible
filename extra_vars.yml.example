@@ -27,4 +27,4 @@ rancher:
 
 # Lifecycle Manager
 lifecycle_manager:
-  enabled: true
+  enabled: false # Set to true if you want to install the SUSE AI Lifecycle Manager
