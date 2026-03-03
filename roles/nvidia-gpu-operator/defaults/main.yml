@@ -1,11 +1,11 @@
 ---
-enable_nfd: false
+enable_nfd: "{{ nvidia.gpu_operator_enable_nfd | default(false) }}"
 
 # enable time slicing so that multiple pods can share GPU resource
 # See https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/gpu-sharing.html#time-slicing-gpus-in-kubernetes
-enable_time_slicing: true
-time_slicing_replicas: 4
+enable_time_slicing: "{{ nvidia.gpu_operator_enable_time_slicing | default(true) }}"
+time_slicing_replicas: "{{ nvidia.gpu_operator_time_slicing_replicas | default(4) }}"
 
-gpu_operator_namespace: gpu-operator
-gpu_operator_release: gpu-operator
+gpu_operator_namespace: "{{ nvidia.gpu_operator_namespace | default('gpu-operator') }}"
+gpu_operator_release: "{{ nvidia.gpu_operator_release | default('gpu-operator') }}"
 gpu_operator_chart_version: "{{ nvidia.gpu_operator_version | default('25.10.1') }}"

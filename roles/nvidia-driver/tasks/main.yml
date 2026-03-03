@@ -128,14 +128,14 @@
         disable_gpg_check: true
         state: present
 
-    - name: Install latest package nvidia-compute-utils-G06
+    - name: Install latest package nvidia-compute-utils-G06 and nvidia-gl-G06
       shell: >
         {% if ansible_facts['distribution'] == 'SL-Micro' %}
-        transactional-update --continue --quiet run bash -c "zypper in -y --auto-agree-with-licenses nvidia-compute-utils-G06={{ latest_version }}"
+        transactional-update --continue --quiet run bash -c "zypper in -y --auto-agree-with-licenses nvidia-compute-utils-G06={{ latest_version }} nvidia-gl-G06={{ latest_version }}"
         {% else %}
-        bash -c "zypper in -y --auto-agree-with-licenses nvidia-compute-utils-G06={{ latest_version }}"
+        bash -c "zypper in -y --auto-agree-with-licenses nvidia-compute-utils-G06={{ latest_version }} nvidia-gl-G06={{ latest_version }}"
         {% endif %}
-      register: compute_utils_install
+      register: nvidia_install
   when:
     - has_gpu | default(false)
   notify: Reboot after update
@@ -160,9 +160,15 @@
         state: present
         disable_gpg_check: true
 
+    - name: Install fallback nvidia-gl-G06
+      ansible.builtin.zypper:
+        name: "nvidia-gl-G06={{ fallback_driver_version }}"
+        state: present
+        disable_gpg_check: true
+
   when:
-    - compute_utils_install.stdout is defined
-    - "'No provider of' in compute_utils_install.stdout"
+    - nvidia_install.stdout is defined
+    - "'No provider of' in nvidia_install.stdout"
     - has_gpu | default(false)
   notify: Reboot after update
 
