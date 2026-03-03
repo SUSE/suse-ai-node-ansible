@@ -8,3 +8,4 @@ time_slicing_replicas: 4
 
 gpu_operator_namespace: gpu-operator
 gpu_operator_release: gpu-operator
+gpu_operator_chart_version: "{{ nvidia.gpu_operator_version | default('25.10.1') }}"
