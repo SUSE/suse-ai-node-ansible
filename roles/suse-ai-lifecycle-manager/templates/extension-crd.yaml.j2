@@ -1,0 +1,12 @@
+apiVersion: ai-platform.suse.com/v1alpha1
+kind: {{ cr_kind }}
+metadata:
+  name: {{ cr_name }}
+spec:
+  helm:
+    name: {{ extension_helm_name }}
+    url: "{{ extension_helm_url }}"
+    version: "{{ extension_helm_version }}"
+  extension:
+    name: {{ extension_name }}
+    version: "{{ extension_version }}"

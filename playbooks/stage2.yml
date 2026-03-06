@@ -22,3 +22,7 @@
 - name: Install NVIDIA gpu-operator
   import_playbook: 06-install-gpu-operator.yml
   when: nvidia.gpu_operator_deploy | default(False)
+
+- name: Install SUSE AI Operator and SUSE AI Lifecycle Manager
+  import_playbook: 07-install-lifecycle-manager.yml
+  when: lifecycle_manager.enabled | default(False)

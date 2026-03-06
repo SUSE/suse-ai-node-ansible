@@ -1,0 +1,4 @@
+- name: Install SUSE AI Operator and SUSE AI Lifecycle Manager
+  hosts: rke2_servers[0]
+  roles:
+    - suse-ai-lifecycle-manager

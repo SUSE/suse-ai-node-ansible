@@ -25,3 +25,8 @@ rancher:
   hostname: suse-rancher.example.com
   bootstrap_password: rancher
 
+# Lifecycle Manager
+lifecycle_manager:
+  enabled: false # Set to true if you want to install the SUSE AI Lifecycle Manager
+  version: 1.0.0
+  chart_version: 1.0.0

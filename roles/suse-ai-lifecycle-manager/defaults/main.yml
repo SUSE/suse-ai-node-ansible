@@ -1,0 +1,18 @@
+---
+
+# CR variables
+cr_name: suseai
+cr_kind: InstallAIExtension
+extension_helm_name: suse-ai-lifecycle-manager
+extension_helm_url: "oci://ghcr.io/suse/chart/suse-ai-lifecycle-manager"
+extension_helm_version: "{{ lifecycle_manager.chart_version | default('1.0.0') }}"
+extension_name: suse-ai-lifecycle-manager
+extension_version: "{{ lifecycle_manager.version | default('1.0.0') }}"
+
+# operator chart
+operator_release_name: suse-ai-operator
+operator_chart: "oci://ghcr.io/suse/chart/suse-ai-operator"
+operator_namespace: suse-ai-operator-system
+operator_chart_version: "0.1.0"
+operator_label_selector: "app.kubernetes.io/name=suse-ai-operator"
+operator_deployment_name: suse-ai-operator
