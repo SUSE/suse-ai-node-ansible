@@ -138,7 +138,6 @@
       register: nvidia_install
   when:
     - has_gpu | default(false)
-  notify: Reboot after update
 
 - name: Handle fallback if latest version install fails
   become: true
@@ -170,5 +169,10 @@
     - nvidia_install.stdout is defined
     - "'No provider of' in nvidia_install.stdout"
     - has_gpu | default(false)
-  notify: Reboot after update
 
+- name: Mark reboot required
+  set_fact:
+    reboot_required: true
+  when:
+    - suse_packages | length > 0
+    - rpm_check.rc != 0

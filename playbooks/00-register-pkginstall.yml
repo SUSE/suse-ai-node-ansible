@@ -44,3 +44,14 @@
           " on your localhost. After rebooting your localhost, proceed with stage2"
       when:
         - ansible_host == "localhost"  or ansible_facts.get('machine_id') == hostvars['localhost'].ansible_facts.get('machine_id')
+
+    - name: Reboot once if required
+      become: true
+      reboot:
+        msg: "Rebooting {{ ansible_facts['hostname'] }} for the changes take effect."
+        reboot_timeout: "{{ reboot_wait_timeout | default(600) }}"
+        post_reboot_delay: 40
+      when: 
+        - reboot_required | default(false)
+        - not ansible_host == "localhost"
+        - ansible_facts.get('machine_id') != hostvars['localhost'].ansible_facts.get('machine_id')

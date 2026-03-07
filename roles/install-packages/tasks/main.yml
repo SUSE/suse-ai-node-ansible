@@ -22,4 +22,11 @@
   when:
     - suse_packages | length > 0
     - rpm_check.rc != 0   # run only if rpm -q failed for any package
-  notify: Reboot after update #Reboot handler in roles/common
+
+- name: Mark reboot required
+  set_fact:
+    reboot_required: true
+  when:
+    - suse_packages | length > 0
+    - rpm_check.rc != 0
+    - ansible_facts['distribution'] == "SL-Micro"
