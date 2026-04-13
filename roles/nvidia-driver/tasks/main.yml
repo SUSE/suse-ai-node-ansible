@@ -5,13 +5,25 @@
 - name: Construct cuda url
   set_fact:
     construct_cuda_url: >-
-      {% if ansible_facts['distribution'] in ["openSUSE Leap", "openSUSE Tumbleweed"] %}
-      https://developer.download.nvidia.com/compute/cuda/repos/opensuse{{ ansible_facts['distribution_major_version'] }}/{{ 'sbsa' if ansible_facts['architecture'] == 'aarch64' else ansible_facts['architecture'] }}/
-      {% elif ansible_facts['os_family'] == "Suse" and ansible_facts['distribution'] == "SLES" %}
-      https://developer.download.nvidia.com/compute/cuda/repos/sles{{ ansible_facts['distribution_major_version'] }}/{{ 'sbsa' if ansible_facts['architecture'] == 'aarch64' else ansible_facts['architecture'] }}/
-      {% elif ansible_facts['distribution'] == "SL-Micro" %}
-      {% set sle_version = '15' if ansible_facts['distribution_major_version'] in ['6'] %}
-      https://developer.download.nvidia.com/compute/cuda/repos/sles{{sle_version}}/{{ 'sbsa' if ansible_facts['architecture'] == 'aarch64' else ansible_facts['architecture'] }}/
+      {% set arch = 'sbsa' if ansible_facts['architecture'] == 'aarch64' else ansible_facts['architecture'] %}
+      {% set distro = ansible_facts['distribution'] %}
+      {% set major_version = ansible_facts['distribution_major_version'] %}
+      {% set base = 'https://developer.download.nvidia.com/compute/cuda/repos' %}
+
+      {% if distro in ['openSUSE Leap', 'openSUSE Tumbleweed'] %}
+      {{ base }}/opensuse{{ major_version }}/{{ arch }}/
+
+      {% elif distro == 'openSUSE Leap Micro' %}
+      {% set ver = '15' if major_version == '6' else major_version %}
+      {{ base }}/opensuse{{ ver }}/{{ arch }}/
+
+      {% elif distro == 'SLES' %}
+      {{ base }}/{{ 'suse16' if major_version == '16' else 'sles15' }}/{{ arch }}/
+
+      {% elif distro == 'SL-Micro' %}
+      {% set ver = '15' if major_version == '6' else major_version %}
+      {{ base }}/sles{{ ver }}/{{ arch }}/
+
       {% else %}
       unsupported
       {% endif %}
@@ -74,7 +86,8 @@
 
 - name: Set driver package variables
   set_fact:
-    package_name: "{{ 'nv-prefer-signed-open-driver' if osid.stdout == 'sles' else 'nvidia-open-driver-G06-signed-cuda-kmp-default' }}"
+    #package_name: "{{ 'nv-prefer-signed-open-driver' if osid.stdout == 'sles' else 'nvidia-open-driver-G07-signed-cuda-kmp-default' }}"
+    package_name: "nvidia-open-driver-G07-signed-cuda-kmp-default"
     fallback_driver_version: "{{ fallback_driver_version_sles if osid.stdout == 'sles' else fallback_driver_version_sle_micro }}"
 
 - name: Display the package name
@@ -128,12 +141,12 @@
         disable_gpg_check: true
         state: present
 
-    - name: Install latest package nvidia-compute-utils-G06 and nvidia-gl-G06
+    - name: Install latest package nvidia-compute-utils-G07 and nvidia-gl-G07
       shell: >
         {% if ansible_facts['distribution'] == 'SL-Micro' %}
-        transactional-update --continue --quiet run bash -c "zypper in -y --auto-agree-with-licenses nvidia-compute-utils-G06={{ latest_version }} nvidia-gl-G06={{ latest_version }}"
+        transactional-update --continue --quiet run bash -c "zypper in -y --auto-agree-with-licenses nvidia-compute-utils-G07={{ latest_version }} nvidia-gl-G07={{ latest_version }}"
         {% else %}
-        bash -c "zypper in -y --auto-agree-with-licenses nvidia-compute-utils-G06={{ latest_version }} nvidia-gl-G06={{ latest_version }}"
+        bash -c "zypper in -y --auto-agree-with-licenses nvidia-compute-utils-G07={{ latest_version }} nvidia-gl-G07={{ latest_version }}"
         {% endif %}
       register: nvidia_install
   when:
@@ -155,13 +168,13 @@
 
     - name: Install fallback compute-utils
       ansible.builtin.zypper:
-        name: "nvidia-compute-utils-G06={{ fallback_driver_version }}"
+        name: "nvidia-compute-utils-G07={{ fallback_driver_version }}"
         state: present
         disable_gpg_check: true
 
-    - name: Install fallback nvidia-gl-G06
+    - name: Install fallback nvidia-gl-G07
       ansible.builtin.zypper:
-        name: "nvidia-gl-G06={{ fallback_driver_version }}"
+        name: "nvidia-gl-G07={{ fallback_driver_version }}"
         state: present
         disable_gpg_check: true
 

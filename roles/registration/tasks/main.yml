@@ -37,3 +37,24 @@
     - "'Not Registered' in scc_status.stdout"
     - (register_result.rc != 0 or 'Error' in register_result.stdout or 'Not Registered' in register_result.stdout)
 
+- name: SUSEConnect status check
+  become: true
+  command: "SUSEConnect --status-text"
+  register: suse_status
+  ignore_errors: true
+
+- debug:
+    msg:
+      - "{{ ansible_distribution }}"
+      - "{{ ansible_distribution_version }}"
+      - "{{ ansible_architecture }}"
+
+- name: Enable LTSS module if not present
+  become: true
+  command: >
+    SUSEConnect -p SLES-LTSS/{{ ansible_distribution_version }}/{{ ansible_architecture }}
+  when:
+    - ansible_distribution == "SLES"
+    - ansible_distribution_version == "15.6"
+    - "'SLES-LTSS' not in suse_status.stdout"
+  ignore_errors: true

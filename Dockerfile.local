@@ -12,5 +12,7 @@ COPY . /workspace
 
 ENV ANSIBLE_FORCE_COLOR=1
 
+RUN ansible-galaxy collection install -r requirements.yml
+
 # Default command (can be overridden)
 CMD ["ansible-playbook", "-i", "inventory.ini", "playbooks/stage2.yml", "-e", "@extra_vars.yml"]

@@ -11,7 +11,7 @@
 - name: Install SUSE packages "{{ suse_packages }}" {{ ansible_facts['distribution'] }}
   become: true
   shell: |
-    {% if ansible_facts['distribution'] == "SL-Micro" -%}
+    {% if 'Micro' in ansible_facts['distribution'] -%}
     transactional-update --continue -n pkg install --auto-agree-with-licenses {{ suse_packages | join(' ') }}
     {% else %}
     zypper --non-interactive install {{ suse_packages | join(' ') }}
@@ -29,4 +29,16 @@
   when:
     - suse_packages | length > 0
     - rpm_check.rc != 0
-    - ansible_facts['distribution'] == "SL-Micro"
+    - ansible_facts['distribution'] is match('.*Micro.*')
+
+- name: Reboot
+  become: true
+  reboot:
+    msg: "Rebooting {{ ansible_facts['hostname'] }} for the changes take effect."
+    reboot_timeout: "{{ reboot_wait_timeout | default(600) }}"
+    post_reboot_delay: 40
+  when:
+    - reboot_required | default(false)
+    - not ansible_host == "localhost"
+    - ansible_facts.get('machine_id') != hostvars['localhost'].ansible_facts.get('machine_id')
+    - ansible_facts['distribution'] is match('.*Micro.*')

@@ -12,7 +12,7 @@
     - name: Fail if not SUSE family
       ansible.builtin.assert:
         that:
-          - ansible_facts['os_family'] == 'Suse' or ansible_facts['distribution'] == 'SL-Micro'
+          - ansible_facts['os_family'] == 'Suse' or ansible_facts['distribution'] is match('.*Micro.*')
         fail_msg: "Supported only on SUSE family operating systems."
         success_msg: "This is a SUSE system."
 
@@ -55,3 +55,5 @@
         - reboot_required | default(false)
         - not ansible_host == "localhost"
         - ansible_facts.get('machine_id') != hostvars['localhost'].ansible_facts.get('machine_id')
+
+

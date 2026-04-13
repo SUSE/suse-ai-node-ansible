@@ -105,7 +105,7 @@ Configure entries in extra_vars.yml accordingly.
 
 ### 4. Run the site.yml playbook
 
-At a high level, this playbook verifies that the target hosts are supported systems and registers them with the SCC if they are not already registered. It installs required packages and, when enabled, the NVIDIA drivers. NVIDIA G06 drivers are installed on servers with NVIDIA GPUs and are supported on Turing and newer architectures. Finally, the playbook reboots the target hosts and then run some checks and installs rke2 servers, rke2 agents, rancher and gpu-operator.
+At a high level, this playbook verifies that the target hosts are supported systems and registers them with the SCC if they are not already registered. It installs required packages and, when enabled, the NVIDIA drivers. NVIDIA G07 drivers are installed on servers with NVIDIA GPUs and are supported on Turing and newer architectures. Finally, the playbook reboots the target hosts and then run some checks and installs rke2 servers, rke2 agents, rancher and gpu-operator.
 
 ```bash
 docker run --rm \
@@ -162,14 +162,14 @@ To learn more about the Rancher Prime Helm chart repository URL, see the [Prime-
 
 Successfully tested against following target host OS versions:
 
-| Arch                   | Distro                 | Version              | Succesfully Validated (1.0.0 release)             |
+| Arch                   | Distro                 | Version              | Succesfully Validated                             |
 | ---------------------  | ---------------------- | -------------------- | --------------------------------------------------|
 | x86_64                 | sle-micro              | 6.0                  |  yes                                              |
 | x86_64                 | sle-micro              | 6.1                  |  yes                                              |
 | arm64                  | sle-micro              | 6.0                  |  yes                                              |
 | arm64                  | sle-micro              | 6.1                  |  yes                                              |
-| x86_64                 | sles                   | 15-sp6               |  yes                                              |
-| arm64                  | sles                   | 15-sp6               |  yes                                              |
 | x86_64                 | sles                   | 15-sp7               |  yes                                              |
 | arm64                  | sles                   | 15-sp7               |  yes                                              |
-| x86_64                 | leap                   | 15.6                 |  yes                                              |
+| x86_64                 | sles                   | 16                   |  yes                                              |
+| arm64                  | sles                   | 16                   |  yes                                              |
+| x86_64                 | leap                   | 15.7                 |  yes                                              |
