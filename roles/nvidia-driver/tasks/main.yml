@@ -84,11 +84,40 @@
     echo $ID
   register: osid
 
+- name: Search for G07 package
+  become: true
+  command: zypper -n se -s nvidia-open-driver-G07-signed-cuda-kmp-default
+  register: g07_search
+  changed_when: false
+  failed_when: false
+
+- name: Set G07 found fact
+  set_fact:
+    g07_found: "{{ g07_search.stdout is search('nvidia-open-driver-G07-signed-cuda-kmp-default') }}"
+
+- name: Set driver series
+  set_fact:
+    driver_gen: >-
+      {{
+        'G07'
+        if g07_found
+        else 'G06'
+      }}
+
 - name: Set driver package variables
   set_fact:
     #package_name: "{{ 'nv-prefer-signed-open-driver' if osid.stdout == 'sles' else 'nvidia-open-driver-G07-signed-cuda-kmp-default' }}"
-    package_name: "nvidia-open-driver-G07-signed-cuda-kmp-default"
-    fallback_driver_version: "{{ fallback_driver_version_sles if osid.stdout == 'sles' else fallback_driver_version_sle_micro }}"
+    fallback_driver_version: >-
+      {{
+        fallback_driver_version_sles_g07 if osid.stdout == 'sles' and driver_gen == 'g07'
+        else fallback_driver_version_sles_g06 if osid.stdout == 'sles' and driver_gen == 'g06'
+        else fallback_driver_version_sle_micro_g06 if osid.stdout != 'sles' and driver_gen == 'g06'
+        else fallback_driver_version_sle_micro_g07
+      }}
+
+- name: Set package_name
+  set_fact:
+    package_name: 'nvidia-open-driver-{{ driver_gen }}-signed-cuda-kmp-default'
 
 - name: Display the package name
   debug:
@@ -141,12 +170,12 @@
         disable_gpg_check: true
         state: present
 
-    - name: Install latest package nvidia-compute-utils-G07 and nvidia-gl-G07
+    - name: Install latest package nvidia-compute-utils-{{ driver_gen }} and nvidia-gl-{{ driver_gen }}
       shell: >
         {% if ansible_facts['distribution'] == 'SL-Micro' %}
-        transactional-update --continue --quiet run bash -c "zypper in -y --auto-agree-with-licenses nvidia-compute-utils-G07={{ latest_version }} nvidia-gl-G07={{ latest_version }}"
+        transactional-update --continue --quiet run bash -c "zypper in -y --auto-agree-with-licenses nvidia-compute-utils-{{ driver_gen }}={{ latest_version }} nvidia-gl-G07={{ latest_version }}"
         {% else %}
-        bash -c "zypper in -y --auto-agree-with-licenses nvidia-compute-utils-G07={{ latest_version }} nvidia-gl-G07={{ latest_version }}"
+        bash -c "zypper in -y --auto-agree-with-licenses nvidia-compute-utils-{{ driver_gen }}={{ latest_version }} nvidia-gl-{{ driver_gen }}={{ latest_version }}"
         {% endif %}
       register: nvidia_install
   when:
@@ -168,13 +197,13 @@
 
     - name: Install fallback compute-utils
       ansible.builtin.zypper:
-        name: "nvidia-compute-utils-G07={{ fallback_driver_version }}"
+        name: "nvidia-compute-utils-{{{{ driver_gen }}}}={{ fallback_driver_version }}"
         state: present
         disable_gpg_check: true
 
-    - name: Install fallback nvidia-gl-G07
+    - name: Install fallback nvidia-gl-{{ driver_gen }}
       ansible.builtin.zypper:
-        name: "nvidia-gl-G07={{ fallback_driver_version }}"
+        name: "nvidia-gl-{{ driver_gen }}={{ fallback_driver_version }}"
         state: present
         disable_gpg_check: true
 
