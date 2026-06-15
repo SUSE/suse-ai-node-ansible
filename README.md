@@ -9,6 +9,7 @@ This project automates the setup of a high-availability RKE2 cluster with Ranche
 
 - Docker or Podman
 - SSH key-based access to all target nodes
+- SSH user must have passwordless sudo access on target hosts
 - Target hosts are SUSE based OS
 - Proper DNS setup (e.g. `rancher.example.com`)
 - Target hosts must fulfill prerequisites at https://docs.rke2.io/install/quickstart#prerequisites
@@ -145,6 +146,23 @@ confirm key permissions (~/.ssh 700, private key 600).
 verify public key is in ~/.ssh/authorized_keys of the remote user.
 
 run ssh -v user@host to debug connection/auth issues.
+
+#### 6b. Missing sudo password error
+
+If you encounter `[ERROR]: Task failed: Missing sudo password`, the SSH user needs passwordless sudo access configured on the target hosts.
+
+To configure passwordless sudo, run the following on each target host:
+
+```bash
+echo "$USER ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/$USER
+sudo chmod 0440 /etc/sudoers.d/$USER
+```
+
+Verify the configuration:
+```bash
+sudo -l
+```
+You should see `NOPASSWD: ALL` in the output.
 
 
 ### 7. Additional information
