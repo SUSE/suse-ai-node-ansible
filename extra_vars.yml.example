@@ -26,7 +26,36 @@ rancher:
   bootstrap_password: rancher
 
 # Lifecycle Manager
+# NOTE: This will be deprecated in a future release. Use suse_ai_factory instead.
 lifecycle_manager:
   enabled: false # Set to true if you want to install the SUSE AI Lifecycle Manager
   version: 1.0.0
   chart_version: 1.0.0
+
+# SUSE AI Factory
+# Deploys aif-operator and installs the SUSE AI Factory Extension
+# NOTE: The SUSE AI Factory should be installed on a cluster running Rancher
+suse_ai_factory:
+  enabled: false # Set to true if you want to install the SUSE AI Factory
+  version: 2.0.0
+  ai_extension:
+    enabled: true # Set to false to skip installing the SUSE AI Factory Extension
+
+  # Credentials for SUSE Application Collection, NVIDIA NGC, and
+  # SUSE Registry artifact repositories. If not specified, those
+  # credentials can be created out-of-band and via Settings
+  # in the Extension UI.
+  credentials:
+    # credential for oci://dp.apps.rancher.io/charts
+    applicationCollection:
+      username: ""
+      password: ""
+    # credential to pull NGC artifacts
+    # e.g. https://helm.ngc.nvidia.com/nvidia
+    nvidia:
+      username: ""
+      password: ""
+    # credential for oci://registry.suse.com/ai/charts
+    suseRegistry:
+      username: ""
+      password: ""

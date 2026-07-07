@@ -1,0 +1,56 @@
+---
+
+- name: Check that the rancher namespace exists
+  ansible.builtin.command:
+    cmd: kubectl get namespace {{ rancher_check_namespace }}
+  register: rancher_namespace_check
+  changed_when: false
+  failed_when: false
+
+- name: Fail if the rancher namespace is missing
+  ansible.builtin.fail:
+    msg: >
+      Rancher namespace '{{ rancher_check_namespace }}' was not found in the cluster.
+      SUSE AI Factory requires Rancher to be installed before it can be deployed.
+      stderr: {{ rancher_namespace_check.stderr }}
+  when: rancher_namespace_check.rc != 0
+
+- name: Check that the rancher deployment is available
+  ansible.builtin.command:
+    cmd: >
+      kubectl -n {{ rancher_check_namespace }} get deploy {{ rancher_check_release }}
+      -o jsonpath={.status.availableReplicas}
+  register: rancher_available_replicas
+  changed_when: false
+  failed_when: false
+
+- name: Fail if the rancher deployment is not running
+  ansible.builtin.fail:
+    msg: >
+      Rancher deployment '{{ rancher_check_release }}' in namespace
+      '{{ rancher_check_namespace }}' has no available replicas. Ensure Rancher is
+      running and healthy before deploying SUSE AI Factory.
+      stderr: {{ rancher_available_replicas.stderr }}
+  when: >
+    rancher_available_replicas.rc != 0 or
+    (rancher_available_replicas.stdout | default('0') | int) < 1
+
+- name: Check that the rancher-webhook deployment is available
+  ansible.builtin.command:
+    cmd: >
+      kubectl -n {{ rancher_check_namespace }} get deploy {{ rancher_check_release }}-webhook
+      -o jsonpath={.status.availableReplicas}
+  register: rancher_webhook_available_replicas
+  changed_when: false
+  failed_when: false
+
+- name: Fail if the rancher-webhook deployment is not running
+  ansible.builtin.fail:
+    msg: >
+      Rancher webhook deployment '{{ rancher_check_release }}-webhook' in namespace
+      '{{ rancher_check_namespace }}' has no available replicas. The admission webhook
+      must be healthy or Kubernetes will reject SUSE AI Factory resources during install.
+      stderr: {{ rancher_webhook_available_replicas.stderr }}
+  when: >
+    rancher_webhook_available_replicas.rc != 0 or
+    (rancher_webhook_available_replicas.stdout | default('0') | int) < 1

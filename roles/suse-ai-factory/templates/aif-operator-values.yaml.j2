@@ -1,0 +1,58 @@
+manager:
+  replicaCount: {{ aif_operator_replicas }}
+{% if aif_operator_image_registry or aif_operator_image_repository or aif_operator_image_tag or aif_operator_image_pull_policy %}
+  image:
+{% if aif_operator_image_registry %}
+    registry: {{ aif_operator_image_registry }}
+{% endif %}
+{% if aif_operator_image_repository %}
+    repository: {{ aif_operator_image_repository }}
+{% endif %}
+{% if aif_operator_image_tag %}
+    tag: {{ aif_operator_image_tag }}
+{% endif %}
+{% if aif_operator_image_pull_policy %}
+    pullPolicy: {{ aif_operator_image_pull_policy }}
+{% endif %}
+{% endif %}
+  resources:
+    limits:
+      cpu: {{ aif_operator_cpu_limits }}
+      memory: {{ aif_operator_memory_limits }}
+    requests:
+      cpu: {{ aif_operator_cpu_requests }}
+      memory: {{ aif_operator_memory_requests }}
+
+{% set _creds = aif_credentials | dict2items | selectattr('value.username', 'defined') | rejectattr('value.username', 'equalto', '') | list %}
+{% if _creds %}
+credentials:
+{% for _c in _creds %}
+  {{ _c.key }}:
+    username: {{ _c.value.username | to_json }}
+    password: {{ _c.value.password | default('') | to_json }}
+{% endfor %}
+{% endif %}
+
+metrics:
+  enable: {{ aif_metrics_enabled | lower }}
+
+aiExtension:
+  enabled: {{ aif_extension_enabled | lower }}
+{% if aif_extension_image_registry or aif_extension_image_repository or aif_extension_image_tag or aif_extension_image_pull_policy %}
+  source:
+    helm:
+      values:
+        image:
+{% if aif_extension_image_registry %}
+          registry: {{ aif_extension_image_registry }}
+{% endif %}
+{% if aif_extension_image_repository %}
+          repository: {{ aif_extension_image_repository }}
+{% endif %}
+{% if aif_extension_image_tag %}
+          tag: {{ aif_extension_image_tag }}
+{% endif %}
+{% if aif_extension_image_pull_policy %}
+          pullPolicy: {{ aif_extension_image_pull_policy }}
+{% endif %}
+{% endif %}

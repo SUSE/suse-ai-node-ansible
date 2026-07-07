@@ -1,0 +1,7 @@
+---
+
+- name: Validate Rancher is running in the cluster
+  ansible.builtin.include_tasks: validate-rancher.yml
+
+- name: Deploy SUSE AI Factory
+  ansible.builtin.include_tasks: aif-operator.yml
