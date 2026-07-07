@@ -1,0 +1,58 @@
+---
+
+- name: Validate aif-operator chart version exists
+  ansible.builtin.command:
+    cmd: >
+      helm show chart {{ aif_operator_helm_chart_url }} --version {{ aif_operator_version }}
+  register: helm_version_check
+  changed_when: false
+  failed_when: false
+
+- name: Fail if aif-operator helm chart version could not be validated
+  ansible.builtin.fail:
+    msg: >-
+      Helm chart version {{ aif_operator_version }} could not be validated at
+      {{ aif_operator_helm_chart_url }}. stderr: {{ helm_version_check.stderr }}
+  when: helm_version_check.rc != 0
+
+# NOTE: The values file below is deleted after the deploy (see the "always"
+# block) because it contains plaintext registry credentials. Helm stores the
+# user-supplied values with the release itself, so an admin can retrieve the
+# overrides at any time without the on-disk file:
+#
+#   # The user-supplied overrides only (what was in aif_operator_values_file)
+#   helm get values <aif_operator_release> -n <aif_operator_namespace>
+#
+#   # Plugging in the variables from this role:
+#   helm get values "$AIF_OPERATOR_RELEASE" -n "$AIF_OPERATOR_NAMESPACE" -o yaml
+#
+# Add --all to see overrides merged with chart defaults. Note the output
+# includes the registry credentials, so treat it as sensitive.
+- name: Deploy aif-operator
+  block:
+    - name: Copy aif-operator-values.yaml
+      ansible.builtin.template:
+        src: aif-operator-values.yaml.j2
+        dest: "{{ aif_operator_values_file }}"
+        mode: '0600'
+      no_log: true
+
+    - name: Deploy aif-operator helm chart
+      kubernetes.core.helm:
+        name: "{{ aif_operator_release }}"
+        chart_ref: "{{ aif_operator_helm_chart_url }}"
+        chart_version: "{{ aif_operator_version }}"
+        release_namespace: "{{ aif_operator_namespace }}"
+        create_namespace: true
+        values_files:
+          - "{{ aif_operator_values_file }}"
+        # atomic implies wait and auto-rolls back on failure, surfacing the Helm error.
+        atomic: true
+        timeout: 10m0s
+  always:
+    # Always delete the credentials file, even if the deploy fails, so plaintext
+    # registry passwords never linger on disk.
+    - name: Remove aif-operator-values.yaml
+      ansible.builtin.file:
+        path: "{{ aif_operator_values_file }}"
+        state: absent

@@ -1,0 +1,43 @@
+---
+
+# aif-operator version
+aif_operator_version: "{{ suse_ai_factory.version | default('2.0.0') }}"
+
+# rancher prerequisite check (namespace/release to validate before deploying)
+rancher_check_namespace: "{{ rancher.namespace | default('cattle-system') }}"
+rancher_check_release: "{{ rancher.release | default('rancher') }}"
+
+# aif-operator chart and deployment settings
+aif_operator_helm_chart_url: "{{ suse_ai_factory.chart_url | default('oci://ghcr.io/suse/chart/aif-operator') }}"
+aif_operator_release: "{{ suse_ai_factory.release | default('aif-operator') }}"
+aif_operator_namespace: "{{ suse_ai_factory.namespace | default('aif-operator') }}"
+aif_operator_values_file: "{{ ansible_env.HOME }}/aif-operator-values.yaml"
+aif_operator_replicas: "{{ suse_ai_factory.replicas | default(1) }}"
+
+# aif-operator manager image overrides (leave empty to use chart default)
+aif_operator_image_registry: "{{ suse_ai_factory.image.registry | default('') }}"
+aif_operator_image_repository: "{{ suse_ai_factory.image.repository | default('') }}"
+aif_operator_image_tag: "{{ suse_ai_factory.image.tag | default(suse_ai_factory.image_tag | default('')) }}"
+aif_operator_image_pull_policy: "{{ suse_ai_factory.image.pull_policy | default('') }}"
+
+# resource configuration
+aif_operator_cpu_limits: "{{ suse_ai_factory.cpu_limits | default('500m') }}"
+aif_operator_memory_limits: "{{ suse_ai_factory.memory_limits | default('128Mi') }}"
+aif_operator_cpu_requests: "{{ suse_ai_factory.cpu_requests | default('10m') }}"
+aif_operator_memory_requests: "{{ suse_ai_factory.memory_requests | default('64Mi') }}"
+
+# metrics configuration
+aif_metrics_enabled: "{{ suse_ai_factory.metrics_enabled | default(true) }}"
+
+# ai extension configuration
+aif_extension_enabled: "{{ suse_ai_factory.ai_extension.enabled | default(true) }}"
+
+# ai extension (aif-ui) image overrides (leave empty to use chart default)
+aif_extension_image_registry: "{{ suse_ai_factory.ai_extension.image.registry | default('') }}"
+aif_extension_image_repository: "{{ suse_ai_factory.ai_extension.image.repository | default('') }}"
+aif_extension_image_tag: "{{ suse_ai_factory.ai_extension.image.tag | default('') }}"
+aif_extension_image_pull_policy: "{{ suse_ai_factory.ai_extension.image.pull_policy | default('') }}"
+
+# artifact repository credentials (applicationCollection, nvidia, suseRegistry)
+# Leave empty to configure them out-of-band via the Extension UI.
+aif_credentials: "{{ suse_ai_factory.credentials | default({}, true) }}"

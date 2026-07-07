@@ -24,6 +24,7 @@ This project automates the setup of a high-availability RKE2 cluster with Ranche
   - RKE2 agent node installation
   - Optional deployment of Rancher
   - Optional deployment of nvidia gpu-operator
+  - Optional deployment of SUSE AI Factory
 - Roles for idempotent configuration
 - A Dockerfile to run the playbooks in a container
 

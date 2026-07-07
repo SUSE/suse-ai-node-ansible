@@ -26,3 +26,7 @@
 - name: Install SUSE AI Operator and SUSE AI Lifecycle Manager
   import_playbook: 07-install-lifecycle-manager.yml
   when: lifecycle_manager.enabled | default(False)
+
+- name: Install SUSE AI Factory
+  import_playbook: 08-install-suse-ai-factory.yml
+  when: suse_ai_factory.enabled | default(False)

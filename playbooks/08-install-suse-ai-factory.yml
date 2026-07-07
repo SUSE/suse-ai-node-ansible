@@ -1,0 +1,5 @@
+---
+- name: Install SUSE AI Factory
+  hosts: rke2_servers[0]
+  roles:
+    - suse-ai-factory
