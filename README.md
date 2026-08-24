@@ -183,10 +183,6 @@ Successfully tested against following target host OS versions:
 
 | Arch                   | Distro                 | Version              | Succesfully Validated                             |
 | ---------------------  | ---------------------- | -------------------- | --------------------------------------------------|
-| x86_64                 | sle-micro              | 6.0                  |  yes                                              |
-| x86_64                 | sle-micro              | 6.1                  |  yes                                              |
-| arm64                  | sle-micro              | 6.0                  |  yes                                              |
-| arm64                  | sle-micro              | 6.1                  |  yes                                              |
 | x86_64                 | sles                   | 15-sp7               |  yes                                              |
 | arm64                  | sles                   | 15-sp7               |  yes                                              |
 | x86_64                 | sles                   | 16                   |  yes                                              |

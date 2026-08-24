@@ -1,33 +1,91 @@
+# Determine the python package names for the default python3.
+# Prefer the version-specific package (e.g. python311-pip) but fall back to the
+# generic python3-<name>, picking whichever actually exists in the enabled repos.
+- name: Detect default python3 minor version
+  become: true
+  ansible.builtin.command: python3 -c 'import sys; print("%d%d" % sys.version_info[:2])'
+  register: default_python3_version
+  changed_when: false
+
+- name: Find available python packages for the default python3
+  become: true
+  ansible.builtin.shell: |
+    for pkg in "python{{ default_python3_version.stdout | trim }}-{{ item }}" "python3-{{ item }}"; do
+      if zypper --non-interactive --quiet search --match-exact --type package "$pkg" >/dev/null 2>&1; then
+        echo "$pkg"
+        exit 0
+      fi
+    done
+    exit 1
+  register: python_package_lookup
+  changed_when: false
+  # A package that resolves to neither variant exits non-zero; that is not a failure here.
+  # The set_fact below keeps only results with rc == 0.
+  failed_when: false
+  loop:
+    - PyYAML
+
+- name: Build the effective install list (base + resolved python packages)
+  ansible.builtin.set_fact:
+    install_packages: >-
+      {{
+        (
+          suse_packages
+          + (
+              python_package_lookup.results
+              | selectattr('rc', 'equalto', 0)
+              | map(attribute='stdout')
+              | map('trim')
+              | reject('equalto', '')
+              | list
+            )
+        )
+        | unique
+      }}
+
 # Install suse packages
-- name: Check if SUSE packages "{{ suse_packages }}" are installed
+- name: Check if SUSE packages "{{ install_packages }}" are installed
   become: true
   shell: |
-    rpm -q {{ suse_packages | join(' ') }}
+    rpm -q {{ install_packages | join(' ') }}
   register: rpm_check
   changed_when: false
   failed_when: false
-  when: suse_packages | length > 0
+  when: install_packages | length > 0
 
-- name: Install SUSE packages "{{ suse_packages }}" {{ ansible_facts['distribution'] }}
+# Import any new/rotated repo signing keys up front so later zypper
+# operations don't fail (e.g. the pre-existing NVIDIA repos on SLE images
+# whose keys are otherwise rejected under --non-interactive, causing
+# "Signature verification failed for repomd.xml" / rc 106).
+- name: Refresh repositories and auto-import GPG keys
+  become: true
+  ansible.builtin.command: >-
+    zypper --non-interactive --gpg-auto-import-keys refresh
+  register: zypper_key_refresh
+  changed_when: false
+  failed_when: false
+  when: ansible_facts['distribution'] == 'SLES'
+
+- name: Install SUSE packages "{{ install_packages }}" {{ ansible_facts['distribution'] }}
   become: true
   shell: |
     {% if 'Micro' in ansible_facts['distribution'] -%}
-    transactional-update --continue -n pkg install --auto-agree-with-licenses {{ suse_packages | join(' ') }}
+    transactional-update --continue -n pkg install --auto-agree-with-licenses {{ install_packages | join(' ') }}
     {% else %}
-    zypper --non-interactive install {{ suse_packages | join(' ') }}
+    zypper --non-interactive install {{ install_packages | join(' ') }}
     {% endif %}
   register: install_suse_packages
   retries: 2
   delay: 60
   when:
-    - suse_packages | length > 0
+    - install_packages | length > 0
     - rpm_check.rc != 0   # run only if rpm -q failed for any package
 
 - name: Mark reboot required
   set_fact:
     reboot_required: true
   when:
-    - suse_packages | length > 0
+    - install_packages | length > 0
     - rpm_check.rc != 0
     - ansible_facts['distribution'] is match('.*Micro.*')
 
