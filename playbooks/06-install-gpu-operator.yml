@@ -1,4 +1,42 @@
+# Detect NVIDIA GPUs on all cluster nodes and deploy the GPU operator only if
+# at least one node has a GPU. Detection is by PCI vendor ID (10de) via
+# `lspci -d`, which works even on minimal images that lack the pci.ids name
+# database (e.g. SL-Micro), where name-based matching would miss the device.
+- name: Detect NVIDIA GPUs across cluster nodes
+  hosts: rke2_servers:rke2_agents
+  gather_facts: false
+  tasks:
+    - name: Check for NVIDIA PCI devices
+      become: true
+      ansible.builtin.command: "lspci -d 10de:"
+      register: lspci_out
+      changed_when: false
+      failed_when: false
+
+    - name: Set has_gpu fact
+      ansible.builtin.set_fact:
+        has_gpu: "{{ lspci_out.stdout | trim | length > 0 }}"
+
 - name: Install NVIDIA gpu-operator
   hosts: rke2_servers[0]
-  roles:
-    - nvidia-gpu-operator
+  tasks:
+    - name: Determine whether any cluster node has a GPU
+      ansible.builtin.set_fact:
+        cluster_has_gpu: >-
+          {{
+            (groups['rke2_servers'] | default([]) + groups['rke2_agents'] | default([]))
+            | map('extract', hostvars)
+            | selectattr('has_gpu', 'defined')
+            | selectattr('has_gpu')
+            | list | length > 0
+          }}
+
+    - name: Skip GPU operator when no GPU nodes are present
+      ansible.builtin.debug:
+        msg: "No nodes with NVIDIA GPUs detected - skipping GPU operator deployment."
+      when: not cluster_has_gpu
+
+    - name: Deploy NVIDIA GPU operator
+      ansible.builtin.include_role:
+        name: nvidia-gpu-operator
+      when: cluster_has_gpu

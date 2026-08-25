@@ -8,8 +8,8 @@ scc_registration:
 
 # Nvidia
 nvidia:
-  driver_install: false # Set to true if nvidia drivers need to be installed on nodes with GPU
-  gpu_operator_deploy: false # Set to true if you want to deploy nvidia gpu-operator
+  driver_install: false # Set to true if nvidia drivers need to be installed on nodes with GPU. Even when true, if a node has no NVIDIA GPU, packages are not installed.
+  gpu_operator_deploy: false # Set to true if you want to deploy nvidia gpu-operator. Even when true, deployment is skipped if no cluster node has an NVIDIA GPU.
 
 # RKE2
 rke2:

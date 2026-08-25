@@ -1,3 +1,16 @@
 ---
 fallback_driver_version_sles: "595.58.03"
 fallback_driver_version_sle_micro: "595.58.03"
+
+# Registered SLES 16+ ships SCC-backed NVIDIA repos, but they are added
+# *disabled* by default. This pattern selects those repos (by alias) so they
+# can be enabled and used as the preferred package source. Case-insensitive.
+nvidia_scc_repo_pattern: '(?i)nvidia'
+
+# Packages that must be provided by an already-configured repo (e.g. the
+# SCC-backed NVIDIA repo on registered SLES 16+). If any of these are not
+# available, the NVIDIA CUDA repo is added as a fallback source.
+nvidia_packages:
+  - nvidia-open-driver-G07-signed-cuda-kmp-default
+  - nvidia-compute-utils-G07
+  - nvidia-gl-G07

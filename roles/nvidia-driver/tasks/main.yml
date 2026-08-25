@@ -1,5 +1,78 @@
 ---
 
+- name: List configured repositories
+  become: true
+  ansible.builtin.command:
+    argv:
+      - zypper
+      - --non-interactive
+      - --xmlout
+      - lr
+  register: zypper_repo_list
+  changed_when: false
+
+- name: Enable SCC-backed NVIDIA repositories
+  # On registered SLES 16+ the NVIDIA repos exist but are disabled by default;
+  # enable them so their packages become the preferred source (avoids falling
+  # back to the external developer.download.nvidia.com CUDA repo).
+  become: true
+  ansible.builtin.command:
+    argv:
+      - zypper
+      - --non-interactive
+      - modifyrepo
+      - --enable
+      - "{{ item }}"
+  loop: "{{ zypper_repo_list.stdout | regex_findall('alias=\"([^\"]+)\"') | select('search', nvidia_scc_repo_pattern) | list }}"
+  changed_when: "'has been successfully enabled' in modifyrepo_result.stdout"
+  register: modifyrepo_result
+
+- name: Refresh package repositories
+  become: true
+  ansible.builtin.command:
+    argv:
+      - zypper
+      - --non-interactive
+      # Import repo signing keys automatically. The freshly-enabled SCC NVIDIA
+      # repos are GPG-checked; without this, --non-interactive declines the
+      # unknown key, the repo never refreshes, and the package check below
+      # wrongly concludes the driver packages are unavailable.
+      - --gpg-auto-import-keys
+      - refresh
+  changed_when: false
+  # Don't abort if an unrelated repo is temporarily unreachable or misconfigured;
+  # the package availability check below is what actually gates the CUDA repo.
+  failed_when: false
+
+- name: Check whether required NVIDIA packages are already available
+  become: true
+  ansible.builtin.command:
+    argv:
+      - zypper
+      - --non-interactive
+      - search
+      - --match-exact
+      - --type
+      - package
+      - "{{ item }}"
+  loop: "{{ nvidia_packages }}"
+  register: nvidia_package_check
+  changed_when: false
+  failed_when: false
+
+- name: Determine whether to add the NVIDIA CUDA repo
+  # Add the CUDA repo only if a required package is not already provided by a
+  # configured repo (e.g. the SCC-backed NVIDIA repo on registered SLES 16+).
+  set_fact:
+    add_nvidia_repo: >-
+      {{
+        nvidia_package_check.results
+        | selectattr('rc', 'ne', 0)
+        | list
+        | length > 0
+      }}
+
+
 # Install the nvidia driver packages on the servers that has GPU.
 
 - name: Construct cuda url
@@ -27,14 +100,17 @@
       {% else %}
       unsupported
       {% endif %}
+  when: add_nvidia_repo | bool
 
 - name: Set cuda_repo_url
   set_fact:
     cuda_repo_url: "{{ construct_cuda_url | trim }}"
+  when: add_nvidia_repo | bool
 
 - name: Display cuda_repo_url
   debug:
     msg: "{{ cuda_repo_url }}"
+  when: add_nvidia_repo | bool
 
 - name: Check if CUDA repo URL is reachable
   uri:
@@ -46,11 +122,14 @@
   register: cuda_repo_check
   failed_when: cuda_repo_check.status | default(0) != 200
   changed_when: false
+  when: add_nvidia_repo | bool
 
 - name: Fail if CUDA repo URL is not reachable
   fail:
     msg: "CUDA repo URL {{ cuda_repo_url }} is not reachable!"
-  when: cuda_repo_check is failed
+  when:
+  - add_nvidia_repo | bool
+  - cuda_repo_check is failed
 
 - name: Add a package repository from NVIDIA
   become: true
@@ -60,6 +139,7 @@
     state: present
     auto_import_keys: true
     runrefresh: true
+  when: add_nvidia_repo | bool
 
 - name: Check for GPU using lspci
   become: true
@@ -125,15 +205,36 @@
       debug:
         msg: "{{ package_name }} latest version is {{ latest_version }}"
 
+    # nvidia-container-toolkit is installed below and needs a source. On
+    # SCC-enabled SLES 16+ it is already provided by NVIDIA-GPU-Compute-Toolkit-CUDA,
+    # so only add the external GitHub repo when the package isn't already available.
+    - name: Check whether nvidia-container-toolkit is already available
+      become: true
+      ansible.builtin.command:
+        argv:
+          - zypper
+          - --non-interactive
+          - search
+          - --match-exact
+          - --type
+          - package
+          - nvidia-container-toolkit
+      register: container_toolkit_check
+      changed_when: false
+      failed_when: false
+
     - name: Check if nvidia-container-toolkit.repo exists
       stat:
         path: /etc/zypp/repos.d/nvidia-container-toolkit.repo
       register: nvidia_container_toolkit_repo_file
+      when: container_toolkit_check.rc != 0
 
     - name: Add container toolkit repo for validation
       shell:
         zypper ar --refresh -G https://nvidia.github.io/libnvidia-container/stable/rpm/nvidia-container-toolkit.repo
-      when: not nvidia_container_toolkit_repo_file.stat.exists
+      when:
+      - container_toolkit_check.rc != 0
+      - not nvidia_container_toolkit_repo_file.stat.exists
 
     - name: Install nvidia-container-toolkit
       ansible.builtin.zypper:
