@@ -56,3 +56,19 @@
   lineinfile:
     path: ~/.bashrc
     line: export PATH="/usr/local/bin:/var/lib/rancher/rke2/bin:~/bin:$PATH"
+
+- name: Fetch direct kubeconfig (bypasses Rancher proxy, needed for isvctl tests)
+  when: inventory_hostname == groups['rke2_servers'][0]
+  block:
+    - name: Read rke2.yaml from server
+      become: true
+      slurp:
+        src: /etc/rancher/rke2/rke2.yaml
+      register: _rke2_kubeconfig_raw
+
+    - name: Write kubeconfig with direct server address to control node
+      delegate_to: localhost
+      copy:
+        content: "{{ _rke2_kubeconfig_raw.content | b64decode | replace('https://127.0.0.1:6443', 'https://' + (rke2.lb_address | default(hostvars[groups['rke2_servers'][0]].ansible_host, true)) + ':6443') }}"
+        dest: "{{ playbook_dir }}/../kubeconfig-rke2-direct.yaml"
+        mode: '0600'

@@ -7,3 +7,5 @@ tls-san:
   - {{ hostvars[inventory_hostname]['ansible_host'] }}
   - {{ rke2.lb_address | default(hostvars[groups['rke2_servers'][0]].ansible_host, true) }}
 write-kubeconfig-mode: "0644"
+kube-apiserver-arg:
+  - "service-account-issuer=https://{{ rke2.lb_address | default(hostvars[groups['rke2_servers'][0]].ansible_host, true) }}:6443"
