@@ -1,7 +1,7 @@
 ---
 
 # aif-operator version
-aif_operator_version: "{{ suse_ai_factory.version | default('2.0.0') }}"
+aif_operator_version: "{{ suse_ai_factory.version | default('2.3.1') }}"
 
 # rancher prerequisite check (namespace/release to validate before deploying)
 rancher_check_namespace: "{{ rancher.namespace | default('cattle-system') }}"
@@ -9,6 +9,17 @@ rancher_check_release: "{{ rancher.release | default('rancher') }}"
 
 # aif-operator chart and deployment settings
 aif_operator_helm_chart_url: "{{ suse_ai_factory.chart_url | default('oci://ghcr.io/suse/chart/aif-operator') }}"
+
+# Credentials for authenticating to the OCI registry that hosts the aif-operator
+# chart. The public ghcr.io default is anonymous, so leave the username empty to
+# pull without logging in. When the chart moves to an authenticated registry,
+# set suse_ai_factory.registry.{username,password} to have the role run
+# `helm registry login` before pulling.
+# The login host is always the registry portion of chart_url (e.g. ghcr.io);
+# `helm registry login` must target the same host that the chart ref uses.
+aif_operator_registry_host: "{{ aif_operator_helm_chart_url | regex_replace('^oci://', '') | regex_replace('/.*$', '') }}"
+aif_operator_registry_username: "{{ suse_ai_factory.registry.username | default('', true) }}"
+aif_operator_registry_password: "{{ suse_ai_factory.registry.password | default('', true) }}"
 aif_operator_release: "{{ suse_ai_factory.release | default('aif-operator') }}"
 aif_operator_namespace: "{{ suse_ai_factory.namespace | default('aif-operator') }}"
 aif_operator_values_file: "{{ ansible_env.HOME }}/aif-operator-values.yaml"
@@ -37,6 +48,33 @@ aif_extension_image_registry: "{{ suse_ai_factory.ai_extension.image.registry | 
 aif_extension_image_repository: "{{ suse_ai_factory.ai_extension.image.repository | default('') }}"
 aif_extension_image_tag: "{{ suse_ai_factory.ai_extension.image.tag | default('') }}"
 aif_extension_image_pull_policy: "{{ suse_ai_factory.ai_extension.image.pull_policy | default('') }}"
+
+# --- aif-ui extension chart source ---
+# The aif-operator pulls the aif-ui-server chart to install the AI Factory
+# Extension. Configure the following when that chart is hosted on your own
+# (authenticated / TLS) registry instead of the operator's built-in default.
+# Mirrors the InstallAIExtension sample:
+# https://github.com/SUSE/aif/blob/main/operator/samples/installaiextension-authenticated-tls.yaml
+# Leave chart_url empty to keep the operator's default source.
+aif_extension_chart_url: "{{ suse_ai_factory.ai_extension.source.chart_url | default('', true) }}"
+aif_extension_chart_version: "{{ suse_ai_factory.ai_extension.source.version | default('', true) }}"
+
+# Basic-auth credentials for the extension chart registry. When a username is
+# set, the role creates a secret (default name aif-ui-registry) holding the
+# username/password, and the operator references it to pull the chart.
+aif_extension_registry_username: "{{ suse_ai_factory.ai_extension.source.registry.username | default('', true) }}"
+aif_extension_registry_password: "{{ suse_ai_factory.ai_extension.source.registry.password | default('', true) }}"
+aif_extension_registry_secret_name: "{{ suse_ai_factory.ai_extension.source.registry.secret_name | default('aif-ui-registry', true) }}"
+
+# TLS trust for the extension chart registry. When ca_cert (a PEM string) is set,
+# the role creates a secret (default name aif-ui-registry-ca) holding it under
+# the ca.crt key, and the operator references it to verify the registry.
+aif_extension_registry_ca_cert: "{{ suse_ai_factory.ai_extension.source.tls.ca_cert | default('', true) }}"
+aif_extension_registry_ca_secret_name: "{{ suse_ai_factory.ai_extension.source.tls.ca_secret_name | default('aif-ui-registry-ca', true) }}"
+
+# Optional mutual TLS: reference an existing client secret (not created by this
+# role). Leave empty to skip mTLS.
+aif_extension_client_tls_secret_name: "{{ suse_ai_factory.ai_extension.source.tls.client_secret_name | default('', true) }}"
 
 # artifact repository credentials (applicationCollection, nvidia, suseRegistry)
 # Leave empty to configure them out-of-band via the Extension UI.

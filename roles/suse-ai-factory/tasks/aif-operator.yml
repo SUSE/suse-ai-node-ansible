@@ -1,23 +1,8 @@
 ---
 
-- name: Validate aif-operator chart version exists
-  ansible.builtin.command:
-    cmd: >
-      helm show chart {{ aif_operator_helm_chart_url }} --version {{ aif_operator_version }}
-  register: helm_version_check
-  changed_when: false
-  failed_when: false
-
-- name: Fail if aif-operator helm chart version could not be validated
-  ansible.builtin.fail:
-    msg: >-
-      Helm chart version {{ aif_operator_version }} could not be validated at
-      {{ aif_operator_helm_chart_url }}. stderr: {{ helm_version_check.stderr }}
-  when: helm_version_check.rc != 0
-
-# NOTE: The values file below is deleted after the deploy (see the "always"
-# block) because it contains plaintext registry credentials. Helm stores the
-# user-supplied values with the release itself, so an admin can retrieve the
+# NOTE: The values file written below is deleted after the deploy (see the
+# "always" block) because it contains plaintext registry credentials. Helm stores
+# the user-supplied values with the release itself, so an admin can retrieve the
 # overrides at any time without the on-disk file:
 #
 #   # The user-supplied overrides only (what was in aif_operator_values_file)
@@ -28,8 +13,98 @@
 #
 # Add --all to see overrides merged with chart defaults. Note the output
 # includes the registry credentials, so treat it as sensitive.
+#
+# The optional registry login below authenticates to the OCI registry that hosts
+# the aif-operator chart. It only runs when a username is configured, so the
+# default (anonymous) ghcr.io pull is unaffected. We always log out again in the
+# "always" block so cached credentials never linger in the helm registry config.
 - name: Deploy aif-operator
   block:
+    - name: Log in to the aif-operator chart registry
+      ansible.builtin.command:
+        cmd: >
+          helm registry login {{ aif_operator_registry_host }}
+          --username {{ aif_operator_registry_username }}
+          --password-stdin
+        stdin: "{{ aif_operator_registry_password }}"
+      changed_when: true
+      no_log: true
+      when: aif_operator_registry_username | length > 0
+
+    - name: Validate aif-operator chart version exists
+      ansible.builtin.command:
+        cmd: >
+          helm show chart {{ aif_operator_helm_chart_url }} --version {{ aif_operator_version }}
+      register: helm_version_check
+      changed_when: false
+      failed_when: false
+
+    - name: Fail if aif-operator helm chart version could not be validated
+      ansible.builtin.fail:
+        msg: >-
+          Helm chart version {{ aif_operator_version }} could not be validated at
+          {{ aif_operator_helm_chart_url }}. stderr: {{ helm_version_check.stderr }}
+      when: helm_version_check.rc != 0
+
+    # The aif-ui extension chart source (configured in the values file via
+    # aiExtension.source.helm.auth/tls) references these secrets by name, so they
+    # must exist in the operator namespace before the operator reconciles the
+    # InstallAIExtension resource and pulls the aif-ui-server chart.
+    - name: Ensure the aif-operator namespace exists for extension secrets
+      ansible.builtin.command:
+        cmd: kubectl create namespace {{ aif_operator_namespace }}
+      register: aif_namespace_create
+      changed_when: "'created' in aif_namespace_create.stdout"
+      failed_when:
+        - aif_namespace_create.rc != 0
+        - "'AlreadyExists' not in aif_namespace_create.stderr"
+      when:
+        - aif_extension_enabled | bool
+        - (aif_extension_registry_username | length > 0) or (aif_extension_registry_ca_cert | length > 0)
+
+    # Apply the secret manifests via stdin (kubectl apply -f -) so the plaintext
+    # username/password/CA never appear on the command line / process list. Using
+    # `apply` keeps the tasks idempotent (create-or-update), and to_json yields
+    # correctly quoted YAML scalars for arbitrary values (including multiline PEM).
+    - name: Create aif-ui extension registry basic-auth secret
+      ansible.builtin.command:
+        cmd: kubectl apply -f -
+        stdin: |
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: {{ aif_extension_registry_secret_name | to_json }}
+            namespace: {{ aif_operator_namespace | to_json }}
+          type: Opaque
+          stringData:
+            username: {{ aif_extension_registry_username | to_json }}
+            password: {{ aif_extension_registry_password | to_json }}
+      register: aif_auth_secret_apply
+      changed_when: "'unchanged' not in aif_auth_secret_apply.stdout"
+      no_log: true
+      when:
+        - aif_extension_enabled | bool
+        - aif_extension_registry_username | length > 0
+
+    - name: Create aif-ui extension registry CA secret
+      ansible.builtin.command:
+        cmd: kubectl apply -f -
+        stdin: |
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: {{ aif_extension_registry_ca_secret_name | to_json }}
+            namespace: {{ aif_operator_namespace | to_json }}
+          type: Opaque
+          stringData:
+            ca.crt: {{ aif_extension_registry_ca_cert | to_json }}
+      register: aif_ca_secret_apply
+      changed_when: "'unchanged' not in aif_ca_secret_apply.stdout"
+      no_log: true
+      when:
+        - aif_extension_enabled | bool
+        - aif_extension_registry_ca_cert | length > 0
+
     - name: Copy aif-operator-values.yaml
       ansible.builtin.template:
         src: aif-operator-values.yaml.j2
@@ -56,3 +131,11 @@
       ansible.builtin.file:
         path: "{{ aif_operator_values_file }}"
         state: absent
+
+    # Always drop the cached registry credentials, even if the deploy fails.
+    - name: Log out of the aif-operator chart registry
+      ansible.builtin.command:
+        cmd: helm registry logout {{ aif_operator_registry_host }}
+      changed_when: true
+      failed_when: false
+      when: aif_operator_registry_username | length > 0
