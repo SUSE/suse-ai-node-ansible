@@ -174,13 +174,18 @@
   debug:
     msg: "{{ package_name }}"
 
+- name: Check if system is transactional
+  ansible.builtin.stat:
+    path: /usr/sbin/transactional-update
+  register: transactional_update_bin
+
 # Install the latest NVIDIA graphic driver packages when the target host has Nvidia GPU
 - name: Install NVIDIA driver package (latest)
   become: true
   block:
     - name: Install latest version
       shell: >
-        {% if ansible_facts['distribution'] == 'SL-Micro' %}
+        {% if transactional_update_bin.stat.exists %}
         transactional-update --continue --quiet run bash -c "zypper in -y --auto-agree-with-licenses {{ package_name }}"
         {% else %}
         bash -c "zypper in -y --auto-agree-with-licenses {{ package_name }}"
@@ -189,7 +194,7 @@
 
     - name: Get installed version of package
       shell: >
-        {% if ansible_facts['distribution'] == 'SL-Micro' %}
+        {% if transactional_update_bin.stat.exists %}
         transactional-update --continue --quiet run bash -c "rpm -qa --queryformat '%{VERSION}\n' {{ package_name }} | cut -d '_' -f1 | sort -u | tail -n 1"
         {% else %}
         bash -c "rpm -qa --queryformat '%{VERSION}\n' {{ package_name }} | cut -d '_' -f1 | sort -u | tail -n 1"
@@ -244,7 +249,7 @@
 
     - name: Install latest package nvidia-compute-utils-G07 and nvidia-gl-G07
       shell: >
-        {% if ansible_facts['distribution'] == 'SL-Micro' %}
+        {% if transactional_update_bin.stat.exists %}
         transactional-update --continue --quiet run bash -c "zypper in -y --auto-agree-with-licenses nvidia-compute-utils-G07={{ latest_version }} nvidia-gl-G07={{ latest_version }}"
         {% else %}
         bash -c "zypper in -y --auto-agree-with-licenses nvidia-compute-utils-G07={{ latest_version }} nvidia-gl-G07={{ latest_version }}"
