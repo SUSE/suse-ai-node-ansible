@@ -66,10 +66,15 @@
   failed_when: false
   when: ansible_facts['distribution'] == 'SLES'
 
+- name: Check if system is transactional
+  ansible.builtin.stat:
+    path: /usr/sbin/transactional-update
+  register: transactional_update_bin
+
 - name: Install SUSE packages "{{ install_packages }}" {{ ansible_facts['distribution'] }}
   become: true
   shell: |
-    {% if 'Micro' in ansible_facts['distribution'] -%}
+    {% if transactional_update_bin.stat.exists -%}
     transactional-update --continue -n pkg install --auto-agree-with-licenses {{ install_packages | join(' ') }}
     {% else %}
     zypper --non-interactive install {{ install_packages | join(' ') }}
@@ -87,7 +92,7 @@
   when:
     - install_packages | length > 0
     - rpm_check.rc != 0
-    - ansible_facts['distribution'] is match('.*Micro.*')
+    - transactional_update_bin.stat.exists
 
 - name: Reboot
   become: true
@@ -99,4 +104,4 @@
     - reboot_required | default(false)
     - not ansible_host == "localhost"
     - ansible_facts.get('machine_id') != hostvars['localhost'].ansible_facts.get('machine_id')
-    - ansible_facts['distribution'] is match('.*Micro.*')
+    - transactional_update_bin.stat.exists
