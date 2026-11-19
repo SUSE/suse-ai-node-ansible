@@ -38,9 +38,34 @@ metrics:
 
 aiExtension:
   enabled: {{ aif_extension_enabled | lower }}
-{% if aif_extension_image_registry or aif_extension_image_repository or aif_extension_image_tag or aif_extension_image_pull_policy %}
+{% set _ext_image = aif_extension_image_registry or aif_extension_image_repository or aif_extension_image_tag or aif_extension_image_pull_policy %}
+{% set _ext_auth = aif_extension_registry_username | length > 0 %}
+{% set _ext_tls = (aif_extension_registry_ca_cert | length > 0) or (aif_extension_client_tls_secret_name | length > 0) %}
+{% if aif_extension_chart_url or aif_extension_chart_version or _ext_image or _ext_auth or _ext_tls %}
   source:
     helm:
+{% if aif_extension_chart_url %}
+      chartURL: {{ aif_extension_chart_url }}
+{% endif %}
+{% if aif_extension_chart_version %}
+      version: {{ aif_extension_chart_version }}
+{% endif %}
+{% if _ext_auth %}
+      auth:
+        basic:
+          userSecretRef: { name: {{ aif_extension_registry_secret_name }}, key: username }
+          tokenSecretRef: { name: {{ aif_extension_registry_secret_name }}, key: password }
+{% endif %}
+{% if _ext_tls %}
+      tls:
+{% if aif_extension_registry_ca_cert | length > 0 %}
+        caSecretRef: { name: {{ aif_extension_registry_ca_secret_name }}, key: ca.crt }
+{% endif %}
+{% if aif_extension_client_tls_secret_name | length > 0 %}
+        clientTLSSecretRef: { name: {{ aif_extension_client_tls_secret_name }} }
+{% endif %}
+{% endif %}
+{% if _ext_image %}
       values:
         image:
 {% if aif_extension_image_registry %}
@@ -54,5 +79,6 @@ aiExtension:
 {% endif %}
 {% if aif_extension_image_pull_policy %}
           pullPolicy: {{ aif_extension_image_pull_policy }}
+{% endif %}
 {% endif %}
 {% endif %}

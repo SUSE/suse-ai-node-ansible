@@ -13,14 +13,14 @@ nvidia:
 
 # RKE2
 rke2:
-  version: v1.34.3-rc2+rke2r1
+  version: v1.35.7+rke2r1
   token: suse-rke2-rancher-token
   lb_address: "" # Set this to the address of an existing load balancer. If blank, the playbooks default to using the IP of the first RKE2 server as the server URL for all other nodes.
 
 # Rancher
 rancher:
   enabled: true
-  version: 2.13.0 #version should be compatible with rke2.version
+  version: 2.15.1 #version should be compatible with rke2.version
   replicas: 1
   hostname: suse-rancher.example.com
   bootstrap_password: rancher
@@ -37,7 +37,7 @@ lifecycle_manager:
 # NOTE: The SUSE AI Factory should be installed on a cluster running Rancher
 suse_ai_factory:
   enabled: false # Set to true if you want to install the SUSE AI Factory
-  version: 2.0.0
+  version: 2.3.1
   ai_extension:
     enabled: true # Set to false to skip installing the SUSE AI Factory Extension
 
